@@ -109,7 +109,7 @@ def find_production_price(material_price_list):
             total_cost[recipe['아이템']] = min(total_cost[recipe['아이템']], round(cost, 2))
         else:
             total_cost[recipe['아이템']] = round(cost, 2)
-    print(total_cost)
+    # print(total_cost)
     return total_cost
 
 
