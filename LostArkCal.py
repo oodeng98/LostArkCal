@@ -17,11 +17,16 @@ from selenium.webdriver.support.ui import WebDriverWait
 def find_price(searchbox, xpath, target):
     searchbox.send_keys(target)
     searchbox.send_keys(Keys.RETURN)
-    time.sleep(0.5)
-    ret = searchbox.find_element_by_xpath(xpath)
+    time.sleep(0.3)
+    try:
+        ret = searchbox.find_element_by_xpath(xpath)
+    except selenium.common.exceptions.NoSuchElementException:
+        ret = 1000  # 거래소에 존재하지 않는 경우, 인기가 없는 아이템이라는 뜻이므로 가격을 그냥 왕창 올려서 우선순위에서 제외되게 함
     searchbox.clear()
-    time.sleep(0.5)
-    return int(ret.text)
+    time.sleep(0.3)
+    if ret:
+        return int(ret.text)
+    return ret
 
 
 def find_all_price():
@@ -77,16 +82,16 @@ def find_all_price():
 
     driver.switch_to.window(driver.window_handles[0])
     driver.close()
-
     return ret
 
 
 def find_production_price(material_price_list, discount):
+    # 빛나는 ~~를 어떻게 처리해야 하나?
     data = pd.read_excel('영지 제작 아이템.xlsx')
     data = data.fillna(0)
     data = data.to_dict('index')
-    total_cost = {}
-    total_count = {}
+    total_production_cost = {}
+    total_production_count = {}
     for i in range(len(data)):
         recipe = data[i]
         name = ''
@@ -97,26 +102,28 @@ def find_production_price(material_price_list, discount):
         for j in recipe:
             if j == '아이템':
                 name = recipe[j]
+                if "빛나는" in name:
+                    temp = name.replace("빛나는 ", "")
+                    cost += min(material_price_list[temp] * 3, total_production_cost[temp])
                 # print(recipe[j], end=' ')
                 continue
             elif j == '수량':
                 count = recipe[j]
-                total_count[name] = count
+                total_production_count[name] = count
             elif j == '소요 시간':
                 time_taken = recipe[j]
             elif j == '활동력':
                 energy = recipe[j]
             elif j == '비용':
-                cost = recipe[j] * (100 - discount) // 100
+                cost += recipe[j] * (100 - discount) // 100
             elif recipe[j] != 0:
                 # print(j, recipe[j], end=' ')
                 cost += material_price_list[j] * recipe[j]
-        if name in total_cost:
-            total_cost[name] = min(total_cost[name], round(cost, 2))
+        if name in total_production_cost:
+            total_production_cost[name] = min(total_production_cost[name], round(cost, 2))
         else:
-            total_cost[name] = round(cost, 2)
-    # print(total_cost)
-    return total_cost, total_count
+            total_production_cost[name] = round(cost, 2)
+    return total_production_cost, total_production_count
 
 
 def find_benefit(production_cost, production_count, sell_cost):
@@ -141,13 +148,13 @@ def find_benefit(production_cost, production_count, sell_cost):
     """
     ret = {}
     for i in item_dict:
-        ret[i] = production_cost[i] / production_count[i] - sell_cost[i]
+        ret[i] = round(production_count[i] * sell_cost[i] - production_cost[i], 2)
+    print(sorted(list(zip(ret.keys(), ret.values())), key=lambda x: x[1], reverse=True))
     return ret
 
 
-
 if __name__ == "__main__":
-    discount_rate = int(input("영지 할인률을 입력해주세요: "))
+    discount_rate = int(input("영지 특수 제작 할인률을 입력해주세요: "))
     item_price_dict = find_all_price()
     item_production_price_dict, item_production_count_dict = find_production_price(item_price_dict, discount_rate)
     find_benefit(item_production_price_dict, item_production_count_dict, item_price_dict)
