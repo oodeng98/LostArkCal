@@ -26,53 +26,73 @@ def receive_input_data():
                     "타격의 대가": 0, "탈출의 명수": 0, "폭발물 전문가": 0, "피스메이커": 0, "핸드거너": 0, "화력 강화": 0,
                     "황제의 칙령": 0, "황후의 은총": 0}
 
-    quality = -1
-    while quality < 0:
+    while True:
         try:
-            quality = int(input("원하는 품질 하한선을 0, 10...80, 90 중 선택하여 입력해주세요: ")) // 10
+            qual = int(input("원하는 품질 하한선을 0, 10...80, 90 중 선택하여 입력해주세요: "))
+            if qual % 10:
+                raise ValueError
+            break
         except ValueError:
             print("잘못 입력하셨습니다. 다시 입력해주세요.")
 
-    check = 0
-    while not check:
-        print("\n개수의 총 합은 목걸이를 2로 쳐서 6이어야 합니다.")
-        feature1 = int(input("치명 악세서리의 개수를 입력해주세요, ex)목걸이, 반지 2개, 귀걸이 2개가 치명에 해당된다면 5, 해당사항이 없으면 0입니다: "))
-        feature2 = int(input("신속 악세서리의 개수를 입력해주세요, ex)목걸이에만 신속이 포함된다면 1, 해당사항이 없으면 0입니다: "))
-        feature3 = int(input("특화 악세서리의 개수를 입력해주세요, ex)목걸이, 반지 1개, 귀걸이 1개가 특화에 해당된다면 3, 해당사항이 없으면 0입니다: "))
-        if feature1 + feature2 + feature3 > 6:
-            print("개수를 잘못 입력하셨습니다. 다시 입력해주세요.")
-            continue
-        check = int(input(f"원하는 품질이 {quality * 10}이상, 치명 악세서리의 개수가 {feature1}개,"
-                          f" 신속 악세서리의 개수가 {feature2}개, 특화 악세서리의 개수가 {feature3}개가 맞다면 1을,"
-                          f" 다시 입력하고 싶으시다면 0을 입력해주세요: "))
-
-    target_dict = {}
-    check = 0
-    while not check:
-        target = input("목표 각인을 입력해주세요, 정확한 이름으로 입력하셔야 합니다, ex)예리한 둔기(O), 예둔(X), 예리한둔기(X), "
-                       "그만 입력하시려면 1을, 처음부터 다시 입력하시려면 2를 입력해주세요: ")
-        if target not in engrave_dict:
-            if target == '1':
-                print("목표 각인이", end=" ")
-                for i in target_dict:
-                    print(f"[{i} {target_dict[i]}]", end=" ")
-                check = input("이 맞고 다음 단계로 넘어가고 싶다면 1을, 아니라면 0을 입력해주세요: ")
-                if check == '0':
-                    # 추가입력 or 잘못입력해서 수정
-            elif target == '2':
-                target_dict = {}
+    while True:
+        try:
+            print("\n개수의 총 합은 목걸이를 2로 쳐서 6이어야 합니다.")
+            feature_1 = int(input("치명 악세서리의 개수를 입력해주세요, ex)목걸이, 반지 2개, 귀걸이 2개가 치명에 해당된다면 5, 해당사항이 없으면 0입니다: "))
+            feature_2 = int(input("신속 악세서리의 개수를 입력해주세요, ex)목걸이에만 신속이 포함된다면 1, 해당사항이 없으면 0입니다: "))
+            feature_3 = int(input("특화 악세서리의 개수를 입력해주세요, ex)목걸이, 반지 1개, 귀걸이 1개가 특화에 해당된다면 3, 해당사항이 없으면 0입니다: "))
+            if feature_1 + feature_2 + feature_3 > 6:
+                print("악세서리의 총 개수가 6을 초과하였습니다. 다시 입력해주세요.")
                 continue
+            check = input(f"치명 악세서리의 개수가 {feature_1}개, 신속 악세서리의 개수가 {feature_2}개, 특화 악세서리의 개수가"
+                          f" {feature_3}개가 맞다면 그냥 스페이스를, 다시 입력하고 싶으시다면 0을 입력해주세요: ")
+            if check == "":
+                break
+            elif check == "0":
+                pass
             else:
-                while target not in engrave_dict:
-                    target = input("잘못 입력하셨습니다, 정확한 이름을 찾아서 다시 입력해주세요, 특수기호 또한 포함입니다: ")
-        else:
-            target_dict[target] = int(input(f"{target} 각인의 목표 수치를 1,2,3 중 정해주세요: "))
-    print("시간이 좀 걸립니다, 잠시 기다려주세요...")
-    return quality, feature1, feature2, feature3, target_dict
+                while check != "":
+                    print("잘못 입력하셨습니다.")
+                    check = input(f"치명 악세서리의 개수가 {feature_1}개, 신속 악세서리의 개수가 {feature_2}개, 특화 악세서리의 개수가"
+                                  f" {feature_3}개가 맞다면 그냥 스페이스를, 다시 입력하고 싶으시다면 0을 입력해주세요: ")
+        except ValueError:
+            print("잘못 입력하셨습니다. 다시 입력해주세요.")
 
-if __name__ == "__main__":
-    receive_input_data()
+    target_dic = {}
+    while True:
+        try:
+            target = input("목표 각인을 입력해주세요, 정확한 이름으로 입력하셔야 합니다, ex)예리한 둔기(O), 예둔(X), 예리한둔기(X), "
+                           "그만 입력하시려면 그냥 스페이스를, 처음부터 다시 입력하시려면 1을 입력해주세요: ")
+            if target not in engrave_dict:
+                if target == '':
+                    print("목표 각인이", end=" ")
+                    for i in target_dic:
+                        print(f"[{i} {target_dic[i]}]", end=" ")
+                    check = input("이 맞고 다음 단계로 넘어가고 싶다면 그냥 스페이스를, 추가로 입력하고 싶다면 1을,"
+                                  " 입력이 잘못되서 처음부터 입력하고싶다면 2를 입력해주세요: ")
+                    if check == '':
+                        print("시간이 좀 걸립니다, 잠시 기다려주세요...")
+                        break
+                elif target == '1':
+                    target_dic = {}
+                    continue
+                else:
+                    while target not in engrave_dict:
+                        target = input("잘못 입력하셨습니다, 정확한 이름을 찾아서 다시 입력해주세요, 특수기호 또한 포함입니다: ")
+            else:
+                target_dic[target] = int(input(f"{target} 각인의 목표 수치를 1,2,3 중 정해주세요: "))
+        except ValueError:
+            pass
 
+    return qual + 1, feature_1, feature_2, feature_3, target_dic
+
+
+def find_min_set(quality, feature1, feature2, feature3, target_dict):
+    quality = 8
+    feature1 = 5
+    feature2 = 1
+    feature3 = 0
+    target_dict = {"예리한 둔기": 3, "원한": 3, "돌격대장": 3, "상급 소환사": 3, "넘치는 교감": 1}
     driver = webdriver.Chrome('chromedriver')
     driver.implicitly_wait(5)
 
@@ -85,13 +105,21 @@ if __name__ == "__main__":
     driver.find_element_by_xpath('//*[@id="selItemGrade"]/div[2]/label[7]').click()
     driver.find_element_by_xpath('//*[@id="selItemTier"]/div[1]').click()
     driver.find_element_by_xpath('//*[@id="selItemTier"]/div[2]/label[4]').click()
-    driver.find_element_by_xpath('//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]/button[2]').click()
+    driver.find_element_by_xpath('//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]'
+                                 '/button[2]').click()
     driver.implicitly_wait(5)
 
     driver.find_element_by_xpath('//*[@id="selCategoryDetail"]/div[1]').click()
     driver.find_element_by_xpath('//*[@id="selCategoryDetail"]/div[2]/label[10]').click()
     # 품질을 입력받는다는 가정
-    driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[1]/div[1]/table/tbody/tr[4]/td[2]/div/div[1]').click()
-    driver.find_element_by_xpath(f'//*[@id="modal-deal-option"]/div/div/div[1]/div[1]/table/tbody/tr[4]/td[2]/div/div[2]/label[{quality}]').click()
+    driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[1]/div[1]/table/tbody/tr[4]/td[2]/div/'
+                                 'div[1]').click()
+    driver.find_element_by_xpath(f'//*[@id="modal-deal-option"]/div/div/div[1]/div[1]/table/tbody/tr[4]/td[2]/div/'
+                                 f'div[2]/label[{quality}]').click()
+
 
     # driver.close()
+
+
+if __name__ == "__main__":
+    find_min_set(receive_input_data())
