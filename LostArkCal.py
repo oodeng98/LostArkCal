@@ -22,9 +22,10 @@ def find_price(searchbox, xpath, target):
         ret = searchbox.find_element_by_xpath(xpath)
     except selenium.common.exceptions.NoSuchElementException:
         ret = 1000  # 거래소에 존재하지 않는 경우, 인기가 없는 아이템이라는 뜻이므로 가격을 그냥 왕창 올려서 우선순위에서 제외되게 함
+        # 근데 지금은 안되는중
     searchbox.clear()
     time.sleep(0.3)
-    if ret:
+    if type(ret) != int:
         return int(ret.text)
     return ret
 
