@@ -131,7 +131,7 @@ def find_book_cases():
     all_cases = []
     comb = list(itertools.combinations([0, 1, 2, 3, 4], 2))
     # engrave_case = [(9, 9), (9, 12), (12, 9), (12, 12)]
-    engrave_case = [(9, 9)]  # 9, 9의 케이스를 찾기 위한 줄, 나중에는 없애야함
+    engrave_case = [(12, 9), (9, 12)]  # 12, 9의 케이스를 찾기 위한 줄, 나중에는 없애야함
     for i in comb:
         for j in engrave_case:
             temp = [0, 0, 0, 0, 0]
@@ -140,9 +140,8 @@ def find_book_cases():
     return all_cases
 
 
-def find_all_sets():
-    stone = [7, 0, 6, 0, 0]
-
+def find_all_sets():  # 이 함수를 수정해줘야 더 빠른 속도로 찾을 수 있다.
+    stone = [7, 0, 7, 0, 0]
     # 최소값을 계속 비교해주면서 처음에 잘라버릴 수 있을 것 같은데
     count = 0
     for q in tqdm(find_accessory_cases()):
@@ -176,9 +175,12 @@ def find_all_sets():
 
 
 def auction_set(engrave_dict):
+    # options = webdriver.ChromeOptions()
+    # options.add_argument("headless")
+    # 창이 열리지 않고 수행하게 하는 코드. 단, 이 코드를 사용하면 프로그램을 종료할 때 driver.quit()를 꼭 사용해줘야 한다
     driver = webdriver.Chrome('chromedriver')
-    driver.implicitly_wait(5)
 
+    driver.implicitly_wait(5)
     driver.get(url='https://lostark.game.onstove.com/Auction')
 
     # 아이템 등급과 티어 설정
@@ -186,8 +188,6 @@ def auction_set(engrave_dict):
     driver.find_element_by_xpath('//*[@id="selItemGrade"]/div[2]/label[7]').click()
     driver.find_element_by_xpath('//*[@id="selItemTier"]/div[1]').click()
     driver.find_element_by_xpath('//*[@id="selItemTier"]/div[2]/label[4]').click()
-    driver.find_element_by_xpath('//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]'
-                                 '/button[2]').click()
     driver.implicitly_wait(5)
 
     return driver
@@ -198,16 +198,9 @@ def remove_comma(ret):
 
 
 def auction_search(engrave_dict, driver, qual, neck1, neck2, ear1, ear2, rin1, rin2, target, ability_stone):
-    def find_accessory_price():
-        case = find_accessory_cases()
-        comb = list(itertools.combinations([0, 1, 2, 3, 4], 2))
-        print(comb)
-        print(case)
-        # comb는 10개, 5개씩 case에 속해있어서 50개, 각인을 고정해주고 engrave_case를 돌려주면 될 듯 싶은데?
-        # 각인의 최소 수치로 검색하므로 경우의 수를 찾을 때 15를 넘는 경우를 스킵해줘도 될 듯 싶다, 어차피 각인 수치를 넘는 경우도
-        # 최솟값으로 검색한다면 그 검색 결과에 포함되어 있으므로
-
     # 품질 설정
+    driver.find_element_by_xpath('//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]'
+                                 '/button[2]').click()
     driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[1]/div[1]/table/tbody/tr[4]/td[2]/div/'
                                  'div[1]').click()
     driver.find_element_by_xpath(f'//*[@id="modal-deal-option"]/div/div/div[1]/div[1]/table/tbody/tr[4]/td[2]/div/'
@@ -234,6 +227,9 @@ def auction_search(engrave_dict, driver, qual, neck1, neck2, ear1, ear2, rin1, r
             print(neck1, neck2, end=" ")
         elif q[0] == 12:
             # 특성 1 설정
+            driver.find_element_by_xpath(
+                '//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]'
+                '/button[2]').click()
             driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[1]').click()
             driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[2]/label[2]').click()
             driver.find_element_by_xpath('//*[@id="selEtcSub_0"]/div[1]').click()
@@ -243,8 +239,10 @@ def auction_search(engrave_dict, driver, qual, neck1, neck2, ear1, ear2, rin1, r
             else:
                 driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[ear2]}]').click()
                 print(ear2, end=" ")
-
         else:
+            driver.find_element_by_xpath(
+                '//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]'
+                '/button[2]').click()
             driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[1]').click()
             driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[2]/label[2]').click()
             driver.find_element_by_xpath('//*[@id="selEtcSub_0"]/div[1]').click()
@@ -255,16 +253,16 @@ def auction_search(engrave_dict, driver, qual, neck1, neck2, ear1, ear2, rin1, r
                 driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[rin2]}]').click()
                 print(rin2, end=" ")
         # 각인1 설정
+        driver.find_element_by_xpath('//*[@id="selEtc_2"]/div[1]').click()
+        driver.find_element_by_xpath('//*[@id="selEtc_2"]/div[2]/label[3]').click()
+
+        # 각인2 설정
+        driver.find_element_by_xpath('//*[@id="selEtc_3"]/div[1]').click()
+        driver.find_element_by_xpath('//*[@id="selEtc_3"]/div[2]/label[3]').click()
+
         for w in itertools.combinations(target.keys(), 2):
-            driver.find_element_by_xpath('//*[@id="selEtc_2"]/div[1]').click()
-            driver.find_element_by_xpath('//*[@id="selEtc_2"]/div[2]/label[3]').click()
             engrave1 = w[0]
-
-            # 각인2 설정
-            driver.find_element_by_xpath('//*[@id="selEtc_3"]/div[1]').click()
-            driver.find_element_by_xpath('//*[@id="selEtc_3"]/div[2]/label[3]').click()
             engrave2 = w[1]
-
             # 최소 수치 설정
             price_list = []
             for i in [(3, 5), (5, 3)]:
@@ -284,23 +282,19 @@ def auction_search(engrave_dict, driver, qual, neck1, neck2, ear1, ear2, rin1, r
                 driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[2]/button[1]').click()
                 # driver.find_element_by_xpath('//*[@id="BUY_PRICE"]').click(), 즉시 구매가 기준으로 정렬해주는 건데 안먹힌다
                 # driver.implicitly_wait(5)
-                time.sleep(1)  # 3000, 10000, 7000, 13000, 9000이어야 하는데 3000이 두번 들어오는 오류가 발생해서 넣어줌
+                time.sleep(1)  # 검색 값이 밀리는 오류가 발생해서 넣어줌
                 try:
                     ret = driver.find_element_by_xpath('//*[@id="auctionListTbody"]/tr[1]/td[5]/div/em')
                     # price_list.append(remove_comma(ret.text))
                     print(remove_comma(ret.text))
-                except selenium.common.exceptions.NoSuchElementException:
+                except (selenium.common.exceptions.NoSuchElementException, AttributeError):
                     print("매물 없음")
                 driver.find_element_by_xpath(
                     '//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]/button[2]').click()
 
-        # driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[2]/button[1]').click()
         # driver.find_element_by_xpath('').click()
 
         # cases = find_accessory_cases()
-
-        # if battle == "치명"
-        cases = [3, 0, 5, 0, 0]
 
         # driver.close()
 
