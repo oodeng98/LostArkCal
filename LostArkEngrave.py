@@ -207,74 +207,102 @@ def auction_search(engrave_dict, driver, qual, neck1, neck2, ear1, ear2, rin1, r
         # 각인의 최소 수치로 검색하므로 경우의 수를 찾을 때 15를 넘는 경우를 스킵해줘도 될 듯 싶다, 어차피 각인 수치를 넘는 경우도
         # 최솟값으로 검색한다면 그 검색 결과에 포함되어 있으므로
 
-    # 카테고리 설정
-    driver.find_element_by_xpath('//*[@id="selCategoryDetail"]/div[1]').click()
-    driver.find_element_by_xpath('//*[@id="selCategoryDetail"]/div[2]/label[10]').click()
     # 품질 설정
     driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[1]/div[1]/table/tbody/tr[4]/td[2]/div/'
                                  'div[1]').click()
     driver.find_element_by_xpath(f'//*[@id="modal-deal-option"]/div/div/div[1]/div[1]/table/tbody/tr[4]/td[2]/div/'
                                  f'div[2]/label[{qual}]').click()
-
-    # 전투 특성 설정
-    # 목걸이용 전투 특성 설정
+    # 카테고리 설정
     battle_dict = {"치명": 2, "특화": 3, "신속": 5}
-    # 특성 1 설정
-    driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[1]').click()
-    driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[2]/label[2]').click()
-    driver.find_element_by_xpath('//*[@id="selEtcSub_0"]/div[1]').click()
-    driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[neck1]}]').click()
-    # 특성 2 설정
-    driver.find_element_by_xpath('//*[@id="selEtc_1"]/div[1]').click()
-    driver.find_element_by_xpath('//*[@id="selEtc_1"]/div[2]/label[2]').click()
-    driver.find_element_by_xpath('//*[@id="selEtcSub_1"]/div[1]').click()
-    driver.find_element_by_xpath(f'//*[@id="selEtcSub_1"]/div[2]/label[{battle_dict[neck2]}]').click()
+    for q in [(11, 1), (12, 1), (12, 2), (13, 1), (13, 2)]:
+        driver.find_element_by_xpath('//*[@id="selCategoryDetail"]/div[1]').click()
+        driver.find_element_by_xpath(f'//*[@id="selCategoryDetail"]/div[2]/label[{q[0]}]').click()
 
-    # 각인1 설정
-    driver.find_element_by_xpath('//*[@id="selEtc_2"]/div[1]').click()
-    driver.find_element_by_xpath('//*[@id="selEtc_2"]/div[2]/label[3]').click()
-    engrave1 = "원한"
+        # 전투 특성 설정
+        # 목걸이용 전투 특성 설정
+        if q[0] == 11:
+            # 특성 1 설정
+            driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[1]').click()
+            driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[2]/label[2]').click()
+            driver.find_element_by_xpath('//*[@id="selEtcSub_0"]/div[1]').click()
+            driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[neck1]}]').click()
+            # 특성 2 설정
+            driver.find_element_by_xpath('//*[@id="selEtc_1"]/div[1]').click()
+            driver.find_element_by_xpath('//*[@id="selEtc_1"]/div[2]/label[2]').click()
+            driver.find_element_by_xpath('//*[@id="selEtcSub_1"]/div[1]').click()
+            driver.find_element_by_xpath(f'//*[@id="selEtcSub_1"]/div[2]/label[{battle_dict[neck2]}]').click()
+            print(neck1, neck2, end=" ")
+        elif q[0] == 12:
+            # 특성 1 설정
+            driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[1]').click()
+            driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[2]/label[2]').click()
+            driver.find_element_by_xpath('//*[@id="selEtcSub_0"]/div[1]').click()
+            if q[1] == 1:
+                driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[ear1]}]').click()
+                print(ear1, end=" ")
+            else:
+                driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[ear2]}]').click()
+                print(ear2, end=" ")
 
-    # 각인2 설정
-    driver.find_element_by_xpath('//*[@id="selEtc_3"]/div[1]').click()
-    driver.find_element_by_xpath('//*[@id="selEtc_3"]/div[2]/label[3]').click()
-    engrave2 = "돌격대장"
+        else:
+            driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[1]').click()
+            driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[2]/label[2]').click()
+            driver.find_element_by_xpath('//*[@id="selEtcSub_0"]/div[1]').click()
+            if q[1] == 1:
+                driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[rin1]}]').click()
+                print(rin1, end=" ")
+            else:
+                driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[rin2]}]').click()
+                print(rin2, end=" ")
+        # 각인1 설정
+        for w in itertools.combinations(target.keys(), 2):
+            driver.find_element_by_xpath('//*[@id="selEtc_2"]/div[1]').click()
+            driver.find_element_by_xpath('//*[@id="selEtc_2"]/div[2]/label[3]').click()
+            engrave1 = w[0]
 
-    # 최소 수치 설정
-    price_list = []
-    for i in [(3, 3), (3, 4), (4, 3), (3, 5), (5, 3)]:
-        driver.find_element_by_xpath('//*[@id="selEtcSub_2"]/div[1]').click()
-        driver.find_element_by_xpath(f'//*[@id="selEtcSub_2"]/div[2]/label[{engrave_dict[engrave1]}]').click()
-        input_box = driver.find_element_by_id("txtEtcMin_2")
-        input_box.send_keys(i[0])
+            # 각인2 설정
+            driver.find_element_by_xpath('//*[@id="selEtc_3"]/div[1]').click()
+            driver.find_element_by_xpath('//*[@id="selEtc_3"]/div[2]/label[3]').click()
+            engrave2 = w[1]
 
-        driver.find_element_by_xpath('//*[@id="selEtcSub_3"]/div[1]').click()
-        driver.find_element_by_xpath(f'//*[@id="selEtcSub_3"]/div[2]/label[{engrave_dict[engrave2]}]').click()
-        input_box = driver.find_element_by_id("txtEtcMin_3")
-        input_box.send_keys(i[1])
+            # 최소 수치 설정
+            price_list = []
+            for i in [(3, 5), (5, 3)]:
+                driver.find_element_by_xpath('//*[@id="selEtcSub_2"]/div[1]').click()
+                driver.find_element_by_xpath(f'//*[@id="selEtcSub_2"]/div[2]/label[{engrave_dict[engrave1]}]').click()
+                input_box = driver.find_element_by_id("txtEtcMin_2")
+                input_box.send_keys(i[0])
+                print(engrave1, i[0], end=" ")
 
-        # 검색 버튼 클릭
-        driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[2]/button[1]').click()
-        # driver.find_element_by_xpath('//*[@id="BUY_PRICE"]').click(), 즉시 구매가 기준으로 정렬해주는 건데 안먹힌다
-        # driver.implicitly_wait(5)
-        time.sleep(1)  # 3000, 10000, 7000, 13000, 9000이어야 하는데 3000이 두번 들어오는 오류가 발생해서 넣어줌
-        ret = driver.find_element_by_xpath('//*[@id="auctionListTbody"]/tr[1]/td[5]/div/em')
-        temp = remove_comma(ret.text)
-        price_list.append(temp)  
-        print(temp)
-        driver.find_element_by_xpath(
-            '//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]/button[2]').click()
+                driver.find_element_by_xpath('//*[@id="selEtcSub_3"]/div[1]').click()
+                driver.find_element_by_xpath(f'//*[@id="selEtcSub_3"]/div[2]/label[{engrave_dict[engrave2]}]').click()
+                input_box = driver.find_element_by_id("txtEtcMin_3")
+                input_box.send_keys(i[1])
+                print(engrave2, i[1], end=" ")
 
+                # 검색 버튼 클릭
+                driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[2]/button[1]').click()
+                # driver.find_element_by_xpath('//*[@id="BUY_PRICE"]').click(), 즉시 구매가 기준으로 정렬해주는 건데 안먹힌다
+                # driver.implicitly_wait(5)
+                time.sleep(1)  # 3000, 10000, 7000, 13000, 9000이어야 하는데 3000이 두번 들어오는 오류가 발생해서 넣어줌
+                try:
+                    ret = driver.find_element_by_xpath('//*[@id="auctionListTbody"]/tr[1]/td[5]/div/em')
+                    # price_list.append(remove_comma(ret.text))
+                    print(remove_comma(ret.text))
+                except selenium.common.exceptions.NoSuchElementException:
+                    print("매물 없음")
+                driver.find_element_by_xpath(
+                    '//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]/button[2]').click()
 
-    # driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[2]/button[1]').click()
-    # driver.find_element_by_xpath('').click()
+        # driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[2]/button[1]').click()
+        # driver.find_element_by_xpath('').click()
 
-    # cases = find_accessory_cases()
+        # cases = find_accessory_cases()
 
-    # if battle == "치명"
-    cases = [3, 0, 5, 0, 0]
+        # if battle == "치명"
+        cases = [3, 0, 5, 0, 0]
 
-    # driver.close()
+        # driver.close()
 
 
 if __name__ == "__main__":
