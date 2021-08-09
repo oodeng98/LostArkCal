@@ -1,5 +1,6 @@
 import selenium
 import itertools
+import time
 from tqdm import tqdm
 
 from selenium import webdriver
@@ -17,7 +18,8 @@ def receive_input_data(engrave_dict):
     bad_engrave_dict = {"공격력 감소": 0, "공격속도 감소": 0, "방어력 감소": 0, "이동속도 감소": 0}
 
     print("이 프로그램은 각인 맞추기에 대한 기본적 지식이 있는 사람이 쓰는 것을 가정하고 만든 프로그램입니다.")
-    print("터무니없는 어빌리티 스톤으로 33333각인을 맞춘다는 말도 안되는 경우는 체크해주지 않습니다.\n")
+    print("터무니없는 어빌리티 스톤으로 33333각인을 맞춘다는 말도 안되는 경우는 체크해주지 않습니다.")
+    print("현재 베타테스트 상태로 33333각인만 지원합니다.")
     while True:
         try:
             qual = int(input("원하는 품질 하한선을 0, 10...80, 90 중 선택하여 입력해주세요: "))
@@ -28,39 +30,29 @@ def receive_input_data(engrave_dict):
             print("잘못 입력하셨습니다. 다시 입력해주세요.")
 
     while True:
-        try:
-            print("\n개수의 총 합은 목걸이를 2로 쳐서 6이어야 합니다.")
-            feature_1 = int(input("치명 악세서리의 개수를 입력해주세요, ex)목걸이, 반지 2개, 귀걸이 2개가 치명에 해당된다면 5, 해당사항이 없으면 0입니다: "))
-            feature_2 = int(input("신속 악세서리의 개수를 입력해주세요, ex)목걸이에만 신속이 포함된다면 1, 해당사항이 없으면 0입니다: "))
-            feature_3 = int(input("특화 악세서리의 개수를 입력해주세요, ex)목걸이, 반지 1개, 귀걸이 1개가 특화에 해당된다면 3, 해당사항이 없으면 0입니다: "))
-            if feature_1 + feature_2 + feature_3 != 6:
-                print("악세서리의 총 개수가 6이 아닙니다. 다시 입력해주세요.")
-                continue
-            check = input(f"치명 악세서리의 개수가 {feature_1}개, 신속 악세서리의 개수가 {feature_2}개, 특화 악세서리의 개수가"
-                          f" {feature_3}개가 맞다면 그냥 스페이스를, 다시 입력하고 싶으시다면 0을 입력해주세요: ")
-            if check == "":
-                break
-            elif check == "0":
-                pass
-            else:
-                while check != "":
-                    print("잘못 입력하셨습니다.")
-                    check = input(f"치명 악세서리의 개수가 {feature_1}개, 신속 악세서리의 개수가 {feature_2}개, 특화 악세서리의 개수가"
-                                  f" {feature_3}개가 맞다면 그냥 스페이스를, 다시 입력하고 싶으시다면 0을 입력해주세요: ")
-        except ValueError:
+        print("모든 전투특성 입력은 치명, 신속, 특화 이 세가지 중 한가지입니다. 다른 경우는 고려하지 않습니다.")
+        neck1 = input("목걸이의 첫번째 전투특성을 입력해주세요: ")
+        neck2 = input("목걸이의 두번째 전투특성을 입력해주세요: ")
+        ear1 = input("첫번째 귀걸이의 전투특성을 입력해주세요: ")
+        ear2 = input("두번째 귀걸이의 전투특성을 입력해주세요: ")
+        rin1 = input("첫번째 반지의 전투특성을 입력해주세요: ")
+        rin2 = input("두번째 반지의 전투특성을 입력해주세요: ")
+        if not {neck1, neck2, ear1, ear2, rin1, rin2} - {'치명', '신속', '특화'}:
+            break
+        else:
             print("잘못 입력하셨습니다. 다시 입력해주세요.")
 
     target_dic = {}
     while True:
         try:
             target = input("\n목표 각인을 입력해주세요, 정확한 이름으로 입력하셔야 합니다, ex)예리한 둔기(O), 예둔(X), 예리한둔기(X), "
-                           "그만 입력하시려면 그냥 스페이스를, 처음부터 다시 입력하시려면 1을 입력해주세요: ")
+                           "그만 입력하시려면 그냥 엔터를, 처음부터 다시 입력하시려면 1을 입력해주세요: ")
             if target not in engrave_dict:
                 if target == '':
                     print("목표 각인이", end=" ")
                     for i in target_dic:
                         print(f"[{i} {target_dic[i]}]", end=" ")
-                    check = input("이 맞고 다음 단계로 넘어가고 싶다면 그냥 스페이스를, 추가로 입력하고 싶다면 1을,"
+                    check = input("이 맞고 다음 단계로 넘어가고 싶다면 그냥 엔터를, 추가로 입력하고 싶다면 1을,"
                                   " 입력이 잘못되서 처음부터 입력하고싶다면 2를 입력해주세요: ")
                     if check == '':
                         for i in target_dic:
@@ -105,11 +97,11 @@ def receive_input_data(engrave_dict):
             while temp3 not in bad_engrave_dict:
                 temp3 = input("잘못 입력하셨거나 디버프 각인에 해당하지 않는 각인입니다. 다시 입력해주세요.")
             temp3_num = int(input(f"{temp3} 각인의 어빌리티 스톤 수치를 입력해주세요: "))
+            ability_stone = {temp1: temp1_num, temp2: temp2_num, temp3: temp3_num}
 
             print(f"현재 어빌리티 스톤의 스펙은 {temp1} {temp1_num}, {temp2} {temp2_num}, {temp3} {temp3_num}입니다.")
-            check = input("입력 내용이 정확하다면 그냥 스페이스를, 잘못 입력해서 다시 입력하고 싶다면 1을 입력해주세요: ")
+            check = input("입력 내용이 정확하다면 그냥 엔터를, 잘못 입력해서 다시 입력하고 싶다면 1을 입력해주세요: ")
             if check == "":
-                abil_stone = {temp1: temp1_num, temp2: temp2_num, temp3: temp3_num}
                 break
             elif check == "1":
                 continue
@@ -119,32 +111,8 @@ def receive_input_data(engrave_dict):
         except ValueError:
             print("잘못 입력하셨습니다. 숫자로 입력해주세요.")
     print("시간이 좀 걸립니다, 잠시 기다려주세요...")
-    return qual + 1, feature_1, feature_2, feature_3, target_dic, abil_stone
 
-
-# quality, feature1, feature2, feature3, target_dict, ability_stone 인자
-def all_possible_set():
-    quality = 0
-    feature1 = 5
-    feature2 = 1
-    feature3 = 0
-    target_dict = {"원한": 15, "바리케이드": 15, "슈퍼 차지": 15, "고독한 기사": 15, "결투의 대가": 15}
-    ability_stone = {'원한': 7, "슈퍼 차지": 7, "이동속도 감소": 4}
-    total_temp = -24  # 전설 각인서를 두 종류 다 읽어서 12씩 박을 수 있다고 가정
-    for i in target_dict:
-        total_temp += target_dict[i]
-    for i in ability_stone:
-        if "감소" in i:
-            continue
-        total_temp -= ability_stone[i]
-    if total_temp > 40:
-        print("불가능한 경우의 수입니다.")
-        return
-    # 목걸이 귀걸이1 귀걸이2 반지1 반지2 어빌스톤 각인서
-    # 각각의 요소는 2개의 각인을 가지고 있고 1개의 디버프를 가지고 있다, 각인서 제외
-    # *지금 디버프까지 계산해서 돌려주기엔 무리가 있을 듯*
-    # 엑세서리들은 (5,3), (4,3), (3,3)이 가능
-    # 목걸이는 5C2(10)*5=50가지 가능
+    return qual + 1, neck1, neck2, ear1, ear2, rin1, rin2, target_dic, ability_stone
 
 
 def find_accessory_cases():
@@ -198,14 +166,16 @@ def find_all_sets():
                         if total[i] < 15:
                             check = 1
                             break
-                    if check or total[4] < 5:
+                    # if check or total[4] < 5 or total[4] >= 10:
+                    temp = [5, 6]
+                    if check or total[4] not in temp:
                         continue
                     count += 1
-                    # print(accessories, stone, book, total)
+                    print(accessories, book, total)
     print(count)
 
 
-def find_min_set(engrave_dict):
+def auction_set(engrave_dict):
     driver = webdriver.Chrome('chromedriver')
     driver.implicitly_wait(5)
 
@@ -220,47 +190,85 @@ def find_min_set(engrave_dict):
                                  '/button[2]').click()
     driver.implicitly_wait(5)
 
+    return driver
+
+
+def remove_comma(ret):
+    return int(ret.replace(",", ""))
+
+
+def auction_search(engrave_dict, driver, qual, neck1, neck2, ear1, ear2, rin1, rin2, target, ability_stone):
+    def find_accessory_price():
+        case = find_accessory_cases()
+        comb = list(itertools.combinations([0, 1, 2, 3, 4], 2))
+        print(comb)
+        print(case)
+        # comb는 10개, 5개씩 case에 속해있어서 50개, 각인을 고정해주고 engrave_case를 돌려주면 될 듯 싶은데?
+        # 각인의 최소 수치로 검색하므로 경우의 수를 찾을 때 15를 넘는 경우를 스킵해줘도 될 듯 싶다, 어차피 각인 수치를 넘는 경우도
+        # 최솟값으로 검색한다면 그 검색 결과에 포함되어 있으므로
+
     # 카테고리 설정
     driver.find_element_by_xpath('//*[@id="selCategoryDetail"]/div[1]').click()
     driver.find_element_by_xpath('//*[@id="selCategoryDetail"]/div[2]/label[10]').click()
     # 품질 설정
-    quality = 1
     driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[1]/div[1]/table/tbody/tr[4]/td[2]/div/'
                                  'div[1]').click()
     driver.find_element_by_xpath(f'//*[@id="modal-deal-option"]/div/div/div[1]/div[1]/table/tbody/tr[4]/td[2]/div/'
-                                 f'div[2]/label[{quality}]').click()
+                                 f'div[2]/label[{qual}]').click()
+
     # 전투 특성 설정
+    # 목걸이용 전투 특성 설정
+    battle_dict = {"치명": 2, "특화": 3, "신속": 5}
+    # 특성 1 설정
     driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[1]').click()
     driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[2]/label[2]').click()
-    battle_dict = {"치명": 2, "특화": 3, "신속": 5}
-    battle = "치명"
     driver.find_element_by_xpath('//*[@id="selEtcSub_0"]/div[1]').click()
-    driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[battle]}]').click()
+    driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[neck1]}]').click()
+    # 특성 2 설정
+    driver.find_element_by_xpath('//*[@id="selEtc_1"]/div[1]').click()
+    driver.find_element_by_xpath('//*[@id="selEtc_1"]/div[2]/label[2]').click()
+    driver.find_element_by_xpath('//*[@id="selEtcSub_1"]/div[1]').click()
+    driver.find_element_by_xpath(f'//*[@id="selEtcSub_1"]/div[2]/label[{battle_dict[neck2]}]').click()
 
     # 각인1 설정
-    driver.find_element_by_xpath('//*[@id="selEtc_1"]/div[1]').click()
-    driver.find_element_by_xpath('//*[@id="selEtc_1"]/div[2]/label[3]').click()
-    engrave1 = "원한"
-    driver.find_element_by_xpath('//*[@id="selEtcSub_1"]/div[1]').click()
-    driver.find_element_by_xpath(f'//*[@id="selEtcSub_1"]/div[2]/label[{engrave_dict[engrave1]}]').click()
-
-    # 각인2 설정
     driver.find_element_by_xpath('//*[@id="selEtc_2"]/div[1]').click()
     driver.find_element_by_xpath('//*[@id="selEtc_2"]/div[2]/label[3]').click()
-    engrave2 = "돌격대장"
-    driver.find_element_by_xpath('//*[@id="selEtcSub_2"]/div[1]').click()
-    driver.find_element_by_xpath(f'//*[@id="selEtcSub_2"]/div[2]/label[{engrave_dict[engrave2]}]').click()
+    engrave1 = "원한"
 
-    # 각인 수치 설정
-    input_box = driver.find_element_by_id("txtEtcMin_0")
-    input_box.send_keys(5)
-    driver.find_element_by_xpath('').click()
+    # 각인2 설정
+    driver.find_element_by_xpath('//*[@id="selEtc_3"]/div[1]').click()
+    driver.find_element_by_xpath('//*[@id="selEtc_3"]/div[2]/label[3]').click()
+    engrave2 = "돌격대장"
+
+    # 최소 수치 설정
+    price_list = []
+    for i in [(3, 3), (3, 4), (4, 3), (3, 5), (5, 3)]:
+        driver.find_element_by_xpath('//*[@id="selEtcSub_2"]/div[1]').click()
+        driver.find_element_by_xpath(f'//*[@id="selEtcSub_2"]/div[2]/label[{engrave_dict[engrave1]}]').click()
+        input_box = driver.find_element_by_id("txtEtcMin_2")
+        input_box.send_keys(i[0])
+
+        driver.find_element_by_xpath('//*[@id="selEtcSub_3"]/div[1]').click()
+        driver.find_element_by_xpath(f'//*[@id="selEtcSub_3"]/div[2]/label[{engrave_dict[engrave2]}]').click()
+        input_box = driver.find_element_by_id("txtEtcMin_3")
+        input_box.send_keys(i[1])
+
+        # 검색 버튼 클릭
+        driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[2]/button[1]').click()
+        # driver.find_element_by_xpath('//*[@id="BUY_PRICE"]').click(), 즉시 구매가 기준으로 정렬해주는 건데 안먹힌다
+        # driver.implicitly_wait(5)
+        time.sleep(1)  # 3000, 10000, 7000, 13000, 9000이어야 하는데 3000이 두번 들어오는 오류가 발생해서 넣어줌
+        ret = driver.find_element_by_xpath('//*[@id="auctionListTbody"]/tr[1]/td[5]/div/em')
+        temp = remove_comma(ret.text)
+        price_list.append(temp)  
+        print(temp)
+        driver.find_element_by_xpath(
+            '//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]/button[2]').click()
+
 
     # driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[2]/button[1]').click()
     # driver.find_element_by_xpath('').click()
 
-
-    # driver.find_element_by_xpath('').click()
     # cases = find_accessory_cases()
 
     # if battle == "치명"
@@ -283,4 +291,37 @@ if __name__ == "__main__":
                    "진화의 유산": 70, "질량 증가": 71, "초심": 72, "최대 마나 증가": 73, "추진력": 74, "축복의 오라": 75, "충격 단련": 76,
                    "타격의 대가": 77, "탈출의 명수": 78, "폭발물 전문가": 79, "피스메이커": 80, "핸드거너": 81, "화력 강화": 82,
                    "황제의 칙령": 83, "황후의 은총": 84}
-    find_min_set(engrave_dic)
+    # 1, '치명', '신속', '치명', '치명', '치명', '치명', {'원한': 9, '예리한 둔기': 9, '돌격대장': 9, '상급 소환사': 9, '넘치는 교감': 9}, {'원한': 7, '돌격대장': 6, '방어력 감소': 4}
+    # auction_search(engrave_dic, auction_set(engrave_dic), *receive_input_data(engrave_dic))
+    auction_search(engrave_dic, auction_set(engrave_dic), 1, '치명', '신속', '치명', '치명', '치명', '치명', {'원한': 9, '예리한 둔기': 9, '돌격대장': 9, '상급 소환사': 9, '넘치는 교감': 9}, {'원한': 7, '돌격대장': 6, '방어력 감소': 4})
+    # find_min_set(engrave_dic)
+
+"""
+입력 예시
+0
+치명
+신속
+치명
+치명
+치명
+치명
+원한
+3
+예리한 둔기
+3
+돌격대장
+3
+상급 소환사
+3
+넘치는 교감
+3
+
+
+원한
+7
+돌격대장
+6
+방어력 감소
+4
+
+"""
