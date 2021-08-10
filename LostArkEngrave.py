@@ -13,6 +13,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
 
+from multiprocessing import Pool
+
 
 def receive_input_data(engrave_dict):
     bad_engrave_dict = {"공격력 감소": 0, "공격속도 감소": 0, "방어력 감소": 0, "이동속도 감소": 0}
@@ -174,7 +176,7 @@ def find_all_sets():  # 이 함수를 수정해줘야 더 빠른 속도로 찾�
     print(count)
 
 
-def auction_set(engrave_dict):
+def auction_set(engrave_dict, qual):
     # 창이 열리지 않고 수행하게 하는 코드. 단, 이 코드를 사용하면 프로그램을 종료할 때 driver.quit()를 꼭 사용해줘야 한다
     options = webdriver.ChromeOptions()  # 크롬 옵션 객체 생성
     options.add_argument('headless')  # headless 모드 설정
@@ -207,14 +209,6 @@ def auction_set(engrave_dict):
     driver.find_element_by_xpath('//*[@id="selItemTier"]/div[1]').click()
     driver.find_element_by_xpath('//*[@id="selItemTier"]/div[2]/label[4]').click()
 
-    return driver
-
-
-def remove_comma(ret):
-    return int(ret.replace(",", ""))
-
-
-def auction_search(engrave_dict, driver, qual, neck1, neck2, ear1, ear2, rin1, rin2, target, ability_stone):
     # 품질 설정
     driver.find_element_by_xpath('//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]'
                                  '/button[2]').click()
@@ -222,9 +216,19 @@ def auction_search(engrave_dict, driver, qual, neck1, neck2, ear1, ear2, rin1, r
                                  'div[1]').click()
     driver.find_element_by_xpath(f'//*[@id="modal-deal-option"]/div/div/div[1]/div[1]/table/tbody/tr[4]/td[2]/div/'
                                  f'div[2]/label[{qual}]').click()
+
+    return driver
+
+
+def remove_comma(ret):
+    return int(ret.replace(",", ""))
+
+
+def auction_search(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, target, ability_stone):
     # 카테고리 설정
     battle_dict = {"치명": 2, "특화": 3, "신속": 5}
     for q in [(11, 1), (12, 1), (12, 2), (13, 1), (13, 2)]:
+        driver = auction_set(engrave_dict, qual)
         driver.find_element_by_xpath('//*[@id="selCategoryDetail"]/div[1]').click()
         driver.find_element_by_xpath(f'//*[@id="selCategoryDetail"]/div[2]/label[{q[0]}]').click()
 
@@ -285,13 +289,13 @@ def auction_search(engrave_dict, driver, qual, neck1, neck2, ear1, ear2, rin1, r
                 driver.find_element_by_xpath(f'//*[@id="selEtcSub_2"]/div[2]/label[{engrave_dict[engrave1]}]').click()
                 input_box = driver.find_element_by_id("txtEtcMin_2")
                 input_box.send_keys(i[0])
-                print(engrave1, i[0], end=" ")
+                # print(engrave1, i[0], end=" ")
 
                 driver.find_element_by_xpath('//*[@id="selEtcSub_3"]/div[1]').click()
                 driver.find_element_by_xpath(f'//*[@id="selEtcSub_3"]/div[2]/label[{engrave_dict[engrave2]}]').click()
                 input_box = driver.find_element_by_id("txtEtcMin_3")
                 input_box.send_keys(i[1])
-                print(engrave2, i[1], end=" ")
+                # print(engrave2, i[1], end=" ")
 
                 # 검색 버튼 클릭
                 driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[2]/button[1]').click()
@@ -300,12 +304,14 @@ def auction_search(engrave_dict, driver, qual, neck1, neck2, ear1, ear2, rin1, r
                 try:
                     ret = driver.find_element_by_xpath('//*[@id="auctionListTbody"]/tr[1]/td[5]/div/em')
                     # price_list.append(remove_comma(ret.text))
-                    print(remove_comma(ret.text))
+                    # print(remove_comma(ret.text))
+                    print(f"(('{engrave1}', {i[0]}), ('{engrave2}', {i[1]}), {remove_comma(ret.text)}), ")
                 except (selenium.common.exceptions.NoSuchElementException, AttributeError):
-                    print("매물 없음")
+                    # print("매물 없음")
+                    print(f"(('{engrave1}', {i[0]}), ('{engrave2}', {i[1]}), 1000000), ")
                 driver.find_element_by_xpath(
                     '//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]/button[2]').click()
-
+        driver.quit()
         # driver.find_element_by_xpath('').click()
 
         # cases = find_accessory_cases()
@@ -329,7 +335,10 @@ if __name__ == "__main__":
                    "황제의 칙령": 83, "황후의 은총": 84}
     # 1, '치명', '신속', '치명', '신속', '치명', '신속', {'원한': 9, '예리한 둔기': 9, '돌격대장': 9, '상급 소환사': 9, '넘치는 교감': 9}, {'원한': 7, '돌격대장': 6, '공격력 감소': 4}
     # auction_search(engrave_dic, auction_set(engrave_dic), *receive_input_data(engrave_dic))
-    auction_search(engrave_dic, auction_set(engrave_dic), 1, '치명', '신속', '치명', '신속', '치명', '신속', {'원한': 9, '예리한 둔기': 9, '돌격대장': 9, '상급 소환사': 9, '넘치는 교감': 9}, {'원한': 7, '돌격대장': 6, '공격력 감소': 4})
+    start = time.time()
+    auction_search(engrave_dic, 1, '치명', '신속', '치명', '신속', '치명', '신속', {'원한': 9, '예리한 둔기': 9, '돌격대장': 9, '상급 소환사': 9, '넘치는 교감': 9}, {'원한': 7, '돌격대장': 6, '공격력 감소': 4})
+    finish = time.time()
+    print(finish - start)
     # find_min_set(engrave_dic)
 
 """
@@ -361,3 +370,4 @@ if __name__ == "__main__":
 4
 
 """
+# 멀티프로세싱을 해주면 속도를 늘릴 수 있을 것 같은데..?
