@@ -23,6 +23,7 @@ def receive_input_data(engrave_dict):
     print("이 프로그램은 각인 맞추기에 대한 기본적 지식이 있는 사람이 쓰는 것을 가정하고 만든 프로그램입니다.")
     print("터무니없는 어빌리티 스톤으로 33333각인을 맞춘다는 말도 안되는 경우는 체크해주지 않습니다.")
     print("현재 베타테스트 상태로 33333각인만 지원합니다.")
+    print("선택과 투자, 그리고 과금은 모두 사용자의 책임입니다. 서비스 지원 업체는 해당 부분은 보상하지 않습니다.")
     while True:
         try:
             qual = int(input("원하는 품질 하한선을 0, 10...80, 90 중 선택하여 입력해주세요: "))
@@ -59,7 +60,7 @@ def receive_input_data(engrave_dict):
                                   " 입력이 잘못되서 처음부터 입력하고싶다면 2를 입력해주세요: ")
                     if check == '':
                         for i in target_dic:
-                            target_dic[i] *= 3
+                            target_dic[i] *= 5
                         break
                 elif target == '1':
                     target_dic = {}
@@ -143,10 +144,10 @@ def find_book_cases():
     return all_cases
 
 
-def find_min_set():
+def find_min_set(necklace, earring1, earring2, ring1, ring2):
     # 각인 효과1, 각인 수치1, 각인 효과2, 각인 수치2, 가격
     # 치명 신속 목걸이
-    necklace = [(('원한', 3), ('예리한 둔기', 5), 15000),
+    """necklace = [(('원한', 3), ('예리한 둔기', 5), 15000),
                 (('원한', 5), ('예리한 둔기', 3), 1000),
                 (('원한', 3), ('돌격대장', 5), 7000),
                 (('원한', 5), ('돌격대장', 3), 5000),
@@ -239,15 +240,14 @@ def find_min_set():
              (('돌격대장', 3), ('상급 소환사', 5), 45000),
              (('돌격대장', 5), ('상급 소환사', 3), 45000),
              (('돌격대장', 3), ('넘치는 교감', 5), 20000),
-             (('돌격대장', 5), ('넘치는 교감', 3), 29999)]
-    book_case = itertools.combinations(["돌격대장", '상급 소환사', '넘치는 교감'], 2)
+             (('돌격대장', 5), ('넘치는 교감', 3), 29999)]"""
+    book_case = itertools.combinations(["돌격대장", '상급 소환사', '넘치는 교감'], 2)  # 어빌리티 스톤에 들어있지 않은 각인들
 
     necklace.sort(key=lambda x: x[2])
     earring1.sort(key=lambda x: x[2])
     earring2.sort(key=lambda x: x[2])
     ring1.sort(key=lambda x: x[2])
     ring2.sort(key=lambda x: x[2])
-    min_value = 500000
     total = []
     for y in tqdm(book_case):
         for u in [(9, 12), (12, 9)]:
@@ -280,10 +280,10 @@ def find_min_set():
         print(total[i])
 
 
-def auction_set(engrave_dict, qual):
+def auction_set(engrave_dict):
     # 창이 열리지 않고 수행하게 하는 코드. 단, 이 코드를 사용하면 프로그램을 종료할 때 driver.quit()를 꼭 사용해줘야 한다
     options = webdriver.ChromeOptions()  # 크롬 옵션 객체 생성
-    options.add_argument('headless')  # headless 모드 설정
+    # options.add_argument('headless')  # headless 모드 설정
     options.add_argument("window-size=1920x1080")  # 화면크기(전체화면)
     options.add_argument("disable-gpu")
     options.add_argument("disable-infobars")
@@ -313,14 +313,6 @@ def auction_set(engrave_dict, qual):
     driver.find_element_by_xpath('//*[@id="selItemTier"]/div[1]').click()
     driver.find_element_by_xpath('//*[@id="selItemTier"]/div[2]/label[4]').click()
 
-    # 품질 설정
-    driver.find_element_by_xpath('//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]'
-                                 '/button[2]').click()
-    driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[1]/div[1]/table/tbody/tr[4]/td[2]/div/'
-                                 'div[1]').click()
-    driver.find_element_by_xpath(f'//*[@id="modal-deal-option"]/div/div/div[1]/div[1]/table/tbody/tr[4]/td[2]/div/'
-                                 f'div[2]/label[{qual}]').click()
-
     return driver
 
 
@@ -328,11 +320,22 @@ def remove_comma(ret):
     return int(ret.replace(",", ""))
 
 
-def auction_search(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, target, ability_stone):
+def auction_search(engrave_dict, driver, qual, neck1, neck2, ear1, ear2, rin1, rin2, target, ability_stone):
     # 카테고리 설정
+    neck = []
+    ear1 = []
+    ear2 = []
+    rin1 = []
+    rin2 = []
+    # 품질 설정
+    driver.find_element_by_xpath('//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]'
+                                 '/button[2]').click()
+    driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[1]/div[1]/table/tbody/tr[4]/td[2]/div/'
+                                 'div[1]').click()
+    driver.find_element_by_xpath(f'//*[@id="modal-deal-option"]/div/div/div[1]/div[1]/table/tbody/tr[4]/td[2]/div/'
+                                 f'div[2]/label[{qual}]').click()
     battle_dict = {"치명": 2, "특화": 3, "신속": 5}
     for q in [(11, 1), (12, 1), (12, 2), (13, 1), (13, 2)]:
-        driver = auction_set(engrave_dict, qual)
         driver.find_element_by_xpath('//*[@id="selCategoryDetail"]/div[1]').click()
         driver.find_element_by_xpath(f'//*[@id="selCategoryDetail"]/div[2]/label[{q[0]}]').click()
 
@@ -410,17 +413,25 @@ def auction_search(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, tar
                     # price_list.append(remove_comma(ret.text))
                     # print(remove_comma(ret.text))
                     print(f"(('{engrave1}', {i[0]}), ('{engrave2}', {i[1]}), {remove_comma(ret.text)}), ")
+                    if q[0] == 11:
+                        neck.append(((engrave1, i[0]), (engrave2, i[1]), remove_comma(ret.text)))
+                    elif q[0] == 12:
+                        if q[1] == 1:
+                            ear1.append(((engrave1, i[0]), (engrave2, i[1]), remove_comma(ret.text)))
+                        else:
+                            ear2.append(((engrave1, i[0]), (engrave2, i[1]), remove_comma(ret.text)))
+                    else:
+                        if q[1] == 1:
+                            rin1.append(((engrave1, i[0]), (engrave2, i[1]), remove_comma(ret.text)))
+                        else:
+                            rin2.append(((engrave1, i[0]), (engrave2, i[1]), remove_comma(ret.text)))
                 except (selenium.common.exceptions.NoSuchElementException, AttributeError):
                     # print("매물 없음")
                     print(f"(('{engrave1}', {i[0]}), ('{engrave2}', {i[1]}), 1000000), ")
                 driver.find_element_by_xpath(
                     '//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]/button[2]').click()
-        driver.quit()
-        # driver.find_element_by_xpath('').click()
-
-        # cases = find_accessory_cases()
-
-        # driver.close()
+    driver.quit()
+    return neck, ear1, ear2, rin1, rin2
 
 
 def over_15_check(engrave, new):
@@ -447,13 +458,9 @@ if __name__ == "__main__":
                    "진화의 유산": 70, "질량 증가": 71, "초심": 72, "최대 마나 증가": 73, "추진력": 74, "축복의 오라": 75, "충격 단련": 76,
                    "타격의 대가": 77, "탈출의 명수": 78, "폭발물 전문가": 79, "피스메이커": 80, "핸드거너": 81, "화력 강화": 82,
                    "황제의 칙령": 83, "황후의 은총": 84}
-    # 1, '치명', '신속', '치명', '신속', '치명', '신속', {'원한': 9, '예리한 둔기': 9, '돌격대장': 9, '상급 소환사': 9, '넘치는 교감': 9}, {'원한': 7, '돌격대장': 6, '공격력 감소': 4}
-    # auction_search(engrave_dic, auction_set(engrave_dic), *receive_input_data(engrave_dic))
-    start = time.time()
-    auction_search(engrave_dic, 1, '치명', '신속', '치명', '신속', '치명', '신속', {'원한': 9, '예리한 둔기': 9, '돌격대장': 9, '상급 소환사': 9, '넘치는 교감': 9}, {'원한': 7, '돌격대장': 6, '공격력 감소': 4})
-    finish = time.time()
-    print(finish - start)
-    # find_min_set(engrave_dic)
+    # auction_search(engrave_dic, *receive_input_data(engrave_dic))
+    auction_search(engrave_dic, auction_set(engrave_dic), 1, '치명', '신속', '치명', '신속', '치명', '신속', {'원한': 15, '예리한 둔기': 15, '돌격대장': 15, '상급 소환사': 15, '넘치는 교감': 15}, {'원한': 7, '돌격대장': 6, '공격력 감소': 4})
+
 
 """
 입력 예시
