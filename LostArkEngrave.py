@@ -305,11 +305,11 @@ def remove_comma(ret):
 
 def auction_search(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, target, ability_stone):
     # 카테고리 설정
-    neck = []
-    ear1 = []
-    ear2 = []
-    rin1 = []
-    rin2 = []
+    _neck = []
+    _ear1 = []
+    _ear2 = []
+    _rin1 = []
+    _rin2 = []
     battle_dict = {"치명": 2, "특화": 3, "신속": 5}
     for q in [(11, 1), (12, 1), (12, 2), (13, 1), (13, 2)]:
         driver = auction_set(engrave_dict)
@@ -379,27 +379,26 @@ def auction_search(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, tar
                 driver.find_element_by_xpath(f'//*[@id="selEtcSub_2"]/div[2]/label[{engrave_dict[engrave1]}]').click()
                 input_box = driver.find_element_by_id("txtEtcMin_2")
                 input_box.send_keys(i[0])
-                # print(engrave1, i[0], end=" ")
 
                 driver.find_element_by_xpath('//*[@id="selEtcSub_3"]/div[1]').click()
                 driver.find_element_by_xpath(f'//*[@id="selEtcSub_3"]/div[2]/label[{engrave_dict[engrave2]}]').click()
                 input_box = driver.find_element_by_id("txtEtcMin_3")
                 input_box.send_keys(i[1])
-                # print(engrave2, i[1], end=" ")
 
                 # 검색 버튼 클릭
                 driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[2]/button[1]').click()
                 # driver.find_element_by_xpath('//*[@id="BUY_PRICE"]').click(), 즉시 구매가 기준으로 정렬해주는 건데 안먹힌다
-                driver.implicitly_wait(5)
                 try:
+                    time.sleep(1)
                     ret = driver.find_element_by_xpath('//*[@id="auctionListTbody"]/tr[1]/td[5]/div/em')
                     ret = remove_comma(ret.text)
+                    if ret == 0:
+                        raise AttributeError
                 except (selenium.common.exceptions.NoSuchElementException, AttributeError):
                     try:
                         print("아무것도 없음, 재검색")
                         ret = 1000000
                         driver.find_element_by_xpath('//*[@id="btnSearch"]').click()
-                        driver.implicitly_wait(3)
                         ret = driver.find_element_by_xpath('//*[@id="auctionListTbody"]/tr[1]/td[5]/div/em')
                         ret = remove_comma(ret.text)
                     except (selenium.common.exceptions.NoSuchElementException, AttributeError):
@@ -407,19 +406,18 @@ def auction_search(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, tar
                     # print(remove_comma(ret.text))
                 print(f"(('{engrave1}', {i[0]}), ('{engrave2}', {i[1]}), {ret}), ")
                 if q[0] == 11:
-                    neck.append(((engrave1, i[0]), (engrave2, i[1]), ret))
+                    _neck.append(((engrave1, i[0]), (engrave2, i[1]), ret))
                 elif q[0] == 12:
                     if q[1] == 1:
-                        ear1.append(((engrave1, i[0]), (engrave2, i[1]), ret))
+                        _ear1.append(((engrave1, i[0]), (engrave2, i[1]), ret))
                     else:
-                        ear2.append(((engrave1, i[0]), (engrave2, i[1]), ret))
+                        _ear2.append(((engrave1, i[0]), (engrave2, i[1]), ret))
                 else:
                     if q[1] == 1:
-                        rin1.append(((engrave1, i[0]), (engrave2, i[1]), ret))
+                        _rin1.append(((engrave1, i[0]), (engrave2, i[1]), ret))
                     else:
-                        rin2.append(((engrave1, i[0]), (engrave2, i[1]), ret))
+                        _rin2.append(((engrave1, i[0]), (engrave2, i[1]), ret))
                     driver.find_element_by_xpath('//*[@id="btnSearch"]').click()
-                time.sleep(2)
                 try:
                     driver.find_element_by_xpath(
                         '//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]/button[2]').click()
@@ -428,7 +426,7 @@ def auction_search(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, tar
                     driver.find_element_by_xpath(
                         '//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]/button[2]').click()
         driver.quit()
-    return neck, ear1, ear2, rin1, rin2
+    return _neck, _ear1, _ear2, _rin1, _rin2
 
 
 def over_15_check(engrave, new):
@@ -456,7 +454,7 @@ if __name__ == "__main__":
                    "타격의 대가": 77, "탈출의 명수": 78, "폭발물 전문가": 79, "피스메이커": 80, "핸드거너": 81, "화력 강화": 82,
                    "황제의 칙령": 83, "황후의 은총": 84}
     # auction_search(engrave_dic, *receive_input_data(engrave_dic))
-    auction_search(engrave_dic, 1, '치명', '신속', '치명', '신속', '치명', '신속', {'원한': 15, '예리한 둔기': 15, '돌격대장': 15, '상급 소환사': 15, '넘치는 교감': 15}, {'원한': 7, '돌격대장': 6, '공격력 감소': 4})
+    print(auction_search(engrave_dic, 1, '치명', '신속', '치명', '신속', '치명', '신속', {'원한': 15, '예리한 둔기': 15, '돌격대장': 15, '상급 소환사': 15, '넘치는 교감': 15}, {'원한': 7, '돌격대장': 6, '공격력 감소': 4}))
 
 
 """
@@ -488,4 +486,3 @@ if __name__ == "__main__":
 4
 
 """
-# 멀티프로세싱을 해주면 속도를 늘릴 수 있을 것 같은데..?
