@@ -17,6 +17,39 @@ from selenium.webdriver.support.ui import WebDriverWait
 from multiprocessing import Pool
 
 
+def find_price(target):
+    _target = copy.deepcopy(target)
+    driver = webdriver.Chrome('chromedriver')
+    driver.implicitly_wait(5)
+
+    driver.get(url='https://lostark.game.onstove.com/Market')
+
+    search_box = driver.find_element_by_id('txtItemName')
+    driver.find_element_by_xpath(
+        '//*[@id="lostark-wrapper"]/div/main/div/div[2]/div[2]/form/fieldset/div/div[3]/div[2]/div/div[1]').click()
+    driver.find_element_by_xpath(
+        '//*[@id="lostark-wrapper"]/div/main/div/div[2]/div[2]/form/fieldset/div/div[3]/div[2]/div/div[2]/label[6]').click()
+
+    for i in _target:
+        search_box.send_keys(i)
+        search_box.send_keys(Keys.RETURN)
+        time.sleep(0.3)
+        try:
+            ret = driver.find_element_by_xpath('//*[@id="tbodyItemList"]/tr/td[3]/div/em')
+        except selenium.common.exceptions.NoSuchElementException:
+            ret = 100000
+
+        search_box.clear()
+        time.sleep(0.3)
+        if type(ret) != int:
+            _target[i] = remove_comma(ret.text)
+        else:
+            _target[i] = ret
+        print(_target[i])
+    print(_target)
+    return _target
+
+
 def receive_input_data(engrave_dict):
     bad_engrave_dict = {"공격력 감소": 0, "공격속도 감소": 0, "방어력 감소": 0, "이동속도 감소": 0}
 
@@ -144,105 +177,16 @@ def find_book_cases():
     return all_cases
 
 
-def find_min_set(necklace, earring1, earring2, ring1, ring2):
+def find_min_set(necklace, earring1, earring2, ring1, ring2, target, ab_stone, book_price):
     # 각인 효과1, 각인 수치1, 각인 효과2, 각인 수치2, 가격
     # 치명 신속 목걸이
-    """necklace = [(('원한', 3), ('예리한 둔기', 5), 15000),
-                (('원한', 5), ('예리한 둔기', 3), 1000),
-                (('원한', 3), ('돌격대장', 5), 7000),
-                (('원한', 5), ('돌격대장', 3), 5000),
-                (('원한', 3), ('상급 소환사', 5), 55000),
-                (('원한', 5), ('상급 소환사', 3), 1000000),
-                (('원한', 3), ('넘치는 교감', 5), 50000),
-                (('원한', 5), ('넘치는 교감', 3), 50000),
-                (('예리한 둔기', 3), ('돌격대장', 5), 20000),
-                (('예리한 둔기', 5), ('돌격대장', 3), 23000),
-                (('예리한 둔기', 3), ('상급 소환사', 5), 1000000),
-                (('예리한 둔기', 5), ('상급 소환사', 3), 50000),
-                (('예리한 둔기', 3), ('넘치는 교감', 5), 130000),
-                (('예리한 둔기', 5), ('넘치는 교감', 3), 30000),
-                (('돌격대장', 3), ('상급 소환사', 5), 90000),
-                (('돌격대장', 5), ('상급 소환사', 3), 40000),
-                (('돌격대장', 3), ('넘치는 교감', 5), 1000000),
-                (('돌격대장', 5), ('넘치는 교감', 3), 1000000)]
-    # 치명 귀걸이
-    earring1 = [(('원한', 3), ('예리한 둔기', 5), 10000),
-                (('원한', 5), ('예리한 둔기', 3), 1000),
-                (('원한', 3), ('돌격대장', 5), 800),
-                (('원한', 5), ('돌격대장', 3), 50),
-                (('원한', 3), ('상급 소환사', 5), 7500),
-                (('원한', 5), ('상급 소환사', 3), 90000),
-                (('원한', 3), ('넘치는 교감', 5), 35000),
-                (('원한', 5), ('넘치는 교감', 3), 24000),
-                (('예리한 둔기', 3), ('돌격대장', 5), 1),
-                (('예리한 둔기', 5), ('돌격대장', 3), 100),
-                (('예리한 둔기', 3), ('상급 소환사', 5), 6500),
-                (('예리한 둔기', 5), ('상급 소환사', 3), 35000),
-                (('예리한 둔기', 3), ('넘치는 교감', 5), 56000),
-                (('예리한 둔기', 5), ('넘치는 교감', 3), 15000),
-                (('돌격대장', 3), ('상급 소환사', 5), 10000),
-                (('돌격대장', 5), ('상급 소환사', 3), 50000),
-                (('돌격대장', 3), ('넘치는 교감', 5), 25000),
-                (('돌격대장', 5), ('넘치는 교감', 3), 13000)]
-    # 신속 귀걸이
-    earring2 = [(('원한', 3), ('예리한 둔기', 5), 5000),
-                (('원한', 5), ('예리한 둔기', 3), 4000),
-                (('원한', 3), ('돌격대장', 5), 3499),
-                (('원한', 5), ('돌격대장', 3), 1),
-                (('원한', 3), ('상급 소환사', 5), 15000),
-                (('원한', 5), ('상급 소환사', 3), 20000),
-                (('원한', 3), ('넘치는 교감', 5), 65000),
-                (('원한', 5), ('넘치는 교감', 3), 6500),
-                (('예리한 둔기', 3), ('돌격대장', 5), 100),
-                (('예리한 둔기', 5), ('돌격대장', 3), 2),
-                (('예리한 둔기', 3), ('상급 소환사', 5), 10000),
-                (('예리한 둔기', 5), ('상급 소환사', 3), 25000),
-                (('예리한 둔기', 3), ('넘치는 교감', 5), 50000),
-                (('예리한 둔기', 5), ('넘치는 교감', 3), 6000),
-                (('돌격대장', 3), ('상급 소환사', 5), 100),
-                (('돌격대장', 5), ('상급 소환사', 3), 30000),
-                (('돌격대장', 3), ('넘치는 교감', 5), 30000),
-                (('돌격대장', 5), ('넘치는 교감', 3), 35555)]
-    # 치명 반지
-    ring1 = [(('원한', 3), ('예리한 둔기', 5), 1000),
-             (('원한', 5), ('예리한 둔기', 3), 1050),
-             (('원한', 3), ('돌격대장', 5), 50),
-             (('원한', 5), ('돌격대장', 3), 500),
-             (('원한', 3), ('상급 소환사', 5), 15000),
-             (('원한', 5), ('상급 소환사', 3), 60000),
-             (('원한', 3), ('넘치는 교감', 5), 45000),
-             (('원한', 5), ('넘치는 교감', 3), 10),
-             (('예리한 둔기', 3), ('돌격대장', 5), 1),
-             (('예리한 둔기', 5), ('돌격대장', 3), 500),
-             (('예리한 둔기', 3), ('상급 소환사', 5), 20000),
-             (('예리한 둔기', 5), ('상급 소환사', 3), 30000),
-             (('예리한 둔기', 3), ('넘치는 교감', 5), 20000),
-             (('예리한 둔기', 5), ('넘치는 교감', 3), 15000),
-             (('돌격대장', 3), ('상급 소환사', 5), 10000),
-             (('돌격대장', 5), ('상급 소환사', 3), 54000),
-             (('돌격대장', 3), ('넘치는 교감', 5), 35000),
-             (('돌격대장', 5), ('넘치는 교감', 3), 15000)]
-    # 신속 반지
-    ring2 = [(('원한', 3), ('예리한 둔기', 5), 8000),
-             (('원한', 5), ('예리한 둔기', 3), 2205),
-             (('원한', 3), ('돌격대장', 5), 105),
-             (('원한', 5), ('돌격대장', 3), 1000),
-             (('원한', 3), ('상급 소환사', 5), 10000),
-             (('원한', 5), ('상급 소환사', 3), 50000),
-             (('원한', 3), ('넘치는 교감', 5), 50000),
-             (('원한', 5), ('넘치는 교감', 3), 30000),
-             (('예리한 둔기', 3), ('돌격대장', 5), 4500),
-             (('예리한 둔기', 5), ('돌격대장', 3), 1),
-             (('예리한 둔기', 3), ('상급 소환사', 5), 10000),
-             (('예리한 둔기', 5), ('상급 소환사', 3), 60000),
-             (('예리한 둔기', 3), ('넘치는 교감', 5), 30000),
-             (('예리한 둔기', 5), ('넘치는 교감', 3), 7000),
-             (('돌격대장', 3), ('상급 소환사', 5), 45000),
-             (('돌격대장', 5), ('상급 소환사', 3), 45000),
-             (('돌격대장', 3), ('넘치는 교감', 5), 20000),
-             (('돌격대장', 5), ('넘치는 교감', 3), 29999)]"""
-    book_case = itertools.combinations(["돌격대장", '상급 소환사', '넘치는 교감'], 2)  # 어빌리티 스톤에 들어있지 않은 각인들
-
+    book_case = itertools.combinations(set(target.keys()) - set(ab_stone.keys()), 2)  # 어빌리티 스톤에 들어있지 않은 각인들
+    default = {}
+    for i in target:
+        if i in ab_stone:
+            default[i] = ab_stone[i]
+        else:
+            default[i] = 0
     necklace.sort(key=lambda x: x[2])
     earring1.sort(key=lambda x: x[2])
     earring2.sort(key=lambda x: x[2])
@@ -251,9 +195,13 @@ def find_min_set(necklace, earring1, earring2, ring1, ring2):
     total = []
     for y in tqdm(book_case):
         for u in [(9, 12), (12, 9)]:
-            test = {"원한": 7, "예리한 둔기": 0, "돌격대장": 7, "상급 소환사": 0, "넘치는 교감": 0}
+            test = copy.deepcopy(default)
             test[y[0]] += u[0]
             test[y[1]] += u[1]
+            if u[0] == 12:
+                book = book_price[y[0]] * 20
+            else:
+                book = book_price[y[1]] * 20
             for q in necklace:
                 temp1 = over_15_check(test, q)
                 if type(temp1) == int:
@@ -273,7 +221,7 @@ def find_min_set(necklace, earring1, earring2, ring1, ring2):
                             for t in ring2:
                                 temp5 = over_15_check(temp4, t)
                                 if type(temp5) != int:
-                                    total.append((y, u, q, w, e, r, t, q[-1] + w[-1] + e[-1] + r[-1] + t[-1]))
+                                    total.append((y, u, book, q, w, e, r, t, q[-1] + w[-1] + e[-1] + r[-1] + t[-1] + book))
 
     total.sort(key=lambda x: x[-1])
     for i in range(10):
@@ -303,7 +251,7 @@ def remove_comma(ret):
     return int(ret.replace(",", ""))
 
 
-def auction_search(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, target, ability_stone):
+def auction_search(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, target):
     # 카테고리 설정
     _neck = []
     _ear1 = []
@@ -347,6 +295,7 @@ def auction_search(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, tar
                 print(f'{ear1} 귀걸이')
             else:
                 if ear1 == ear2:
+                    _ear2 = _ear1
                     continue
                 driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[ear2]}]').click()
                 print(f'{ear2} 귀걸이')
@@ -359,6 +308,7 @@ def auction_search(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, tar
                 print(f'{rin1} 반지')
             else:
                 if rin1 == rin2:
+                    _rin2 = _rin1
                     continue
                 driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[rin2]}]').click()
                 print(f'{rin2} 반지')
@@ -389,14 +339,12 @@ def auction_search(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, tar
                 driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[2]/button[1]').click()
                 # driver.find_element_by_xpath('//*[@id="BUY_PRICE"]').click(), 즉시 구매가 기준으로 정렬해주는 건데 안먹힌다
                 try:
-                    time.sleep(1)
+                    time.sleep(2)
                     ret = driver.find_element_by_xpath('//*[@id="auctionListTbody"]/tr[1]/td[5]/div/em')
                     ret = remove_comma(ret.text)
-                    if ret == 0:
-                        raise AttributeError
                 except (selenium.common.exceptions.NoSuchElementException, AttributeError):
                     try:
-                        print("아무것도 없음, 재검색")
+                        # print("아무것도 없음, 재검색")
                         ret = 1000000
                         driver.find_element_by_xpath('//*[@id="btnSearch"]').click()
                         ret = driver.find_element_by_xpath('//*[@id="auctionListTbody"]/tr[1]/td[5]/div/em')
@@ -426,7 +374,7 @@ def auction_search(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, tar
                     driver.find_element_by_xpath(
                         '//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]/button[2]').click()
         driver.quit()
-    return _neck, _ear1, _ear2, _rin1, _rin2
+    return _neck, _ear1, _ear2, _rin1, _rin2, target
 
 
 def over_15_check(engrave, new):
@@ -453,8 +401,12 @@ if __name__ == "__main__":
                    "진화의 유산": 70, "질량 증가": 71, "초심": 72, "최대 마나 증가": 73, "추진력": 74, "축복의 오라": 75, "충격 단련": 76,
                    "타격의 대가": 77, "탈출의 명수": 78, "폭발물 전문가": 79, "피스메이커": 80, "핸드거너": 81, "화력 강화": 82,
                    "황제의 칙령": 83, "황후의 은총": 84}
-    # auction_search(engrave_dic, *receive_input_data(engrave_dic))
-    print(auction_search(engrave_dic, 1, '치명', '신속', '치명', '신속', '치명', '신속', {'원한': 15, '예리한 둔기': 15, '돌격대장': 15, '상급 소환사': 15, '넘치는 교감': 15}, {'원한': 7, '돌격대장': 6, '공격력 감소': 4}))
+    start = time.time()
+    find_min_set(*auction_search(engrave_dic, 1, '치명', '신속', '신속', '신속', '신속', '신속',
+                                 {'원한': 15, '극의: 체술': 15, '돌격대장': 15, '아드레날린': 15, '기습의 대가': 15}),
+                 {'원한': 7, '돌격대장': 7}, find_price({'원한': 15, '극의: 체술': 15, '돌격대장': 15, '아드레날린': 15, '기습의 대가': 15}))
+    finish = time.time()
+    print(finish - start)
 
 
 """
