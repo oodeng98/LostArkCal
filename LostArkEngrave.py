@@ -284,28 +284,11 @@ def auction_set(engrave_dict):
     # 창이 열리지 않고 수행하게 하는 코드. 단, 이 코드를 사용하면 프로그램을 종료할 때 driver.quit()를 꼭 사용해줘야 한다
     options = webdriver.ChromeOptions()  # 크롬 옵션 객체 생성
     # options.add_argument('headless')  # headless 모드 설정
-    options.add_argument("window-size=1920x1080")  # 화면크기(전체화면)
-    options.add_argument("disable-gpu")
-    options.add_argument("disable-infobars")
-    options.add_argument("--disable-extensions")
-
-    # 속도 향상을 위한 옵션 해제
-    prefs = {'profile.default_content_setting_values': {'cookies': 2, 'images': 2, 'plugins': 2, 'popups': 2,
-                                                        'geolocation': 2, 'notifications': 2,
-                                                        'auto_select_certificate': 2, 'fullscreen': 2, 'mouselock': 2,
-                                                        'mixed_script': 2, 'media_stream': 2, 'media_stream_mic': 2,
-                                                        'media_stream_camera': 2, 'protocol_handlers': 2,
-                                                        'ppapi_broker': 2, 'automatic_downloads': 2, 'midi_sysex': 2,
-                                                        'push_messaging': 2, 'ssl_cert_decisions': 2,
-                                                        'metro_switch_to_desktop': 2, 'protected_media_identifier': 2,
-                                                        'app_banner': 2, 'site_engagement': 2, 'durable_storage': 2}}
-    options.add_experimental_option('prefs', prefs)
 
     driver = webdriver.Chrome('chromedriver', options=options)
     driver.get(url='https://lostark.game.onstove.com/Auction')
-    driver.maximize_window()
 
-    driver.implicitly_wait(1.5)
+    driver.implicitly_wait(2.5)
 
     # 아이템 등급과 티어 설정
     driver.find_element_by_xpath('//*[@id="selItemGrade"]/div[1]').click()
@@ -320,22 +303,23 @@ def remove_comma(ret):
     return int(ret.replace(",", ""))
 
 
-def auction_search(engrave_dict, driver, qual, neck1, neck2, ear1, ear2, rin1, rin2, target, ability_stone):
+def auction_search(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, target, ability_stone):
     # 카테고리 설정
     neck = []
     ear1 = []
     ear2 = []
     rin1 = []
     rin2 = []
-    # 품질 설정
-    driver.find_element_by_xpath('//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]'
-                                 '/button[2]').click()
-    driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[1]/div[1]/table/tbody/tr[4]/td[2]/div/'
-                                 'div[1]').click()
-    driver.find_element_by_xpath(f'//*[@id="modal-deal-option"]/div/div/div[1]/div[1]/table/tbody/tr[4]/td[2]/div/'
-                                 f'div[2]/label[{qual}]').click()
     battle_dict = {"치명": 2, "특화": 3, "신속": 5}
     for q in [(11, 1), (12, 1), (12, 2), (13, 1), (13, 2)]:
+        driver = auction_set(engrave_dict)
+        # 품질 설정
+        driver.find_element_by_xpath('//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]'
+                                     '/button[2]').click()
+        driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[1]/div[1]/table/tbody/tr[4]/td[2]/div/'
+                                     'div[1]').click()
+        driver.find_element_by_xpath(f'//*[@id="modal-deal-option"]/div/div/div[1]/div[1]/table/tbody/tr[4]/td[2]/div/'
+                                     f'div[2]/label[{qual}]').click()
         driver.find_element_by_xpath('//*[@id="selCategoryDetail"]/div[1]').click()
         driver.find_element_by_xpath(f'//*[@id="selCategoryDetail"]/div[2]/label[{q[0]}]').click()
 
@@ -390,7 +374,6 @@ def auction_search(engrave_dict, driver, qual, neck1, neck2, ear1, ear2, rin1, r
             engrave1 = w[0]
             engrave2 = w[1]
             # 최소 수치 설정
-            price_list = []
             for i in [(3, 5), (5, 3)]:
                 driver.find_element_by_xpath('//*[@id="selEtcSub_2"]/div[1]').click()
                 driver.find_element_by_xpath(f'//*[@id="selEtcSub_2"]/div[2]/label[{engrave_dict[engrave1]}]').click()
@@ -407,30 +390,44 @@ def auction_search(engrave_dict, driver, qual, neck1, neck2, ear1, ear2, rin1, r
                 # 검색 버튼 클릭
                 driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[2]/button[1]').click()
                 # driver.find_element_by_xpath('//*[@id="BUY_PRICE"]').click(), 즉시 구매가 기준으로 정렬해주는 건데 안먹힌다
-                time.sleep(1)  # 검색 값이 밀리는 오류가 발생해서 넣어줌
+                driver.implicitly_wait(5)
                 try:
                     ret = driver.find_element_by_xpath('//*[@id="auctionListTbody"]/tr[1]/td[5]/div/em')
-                    # price_list.append(remove_comma(ret.text))
-                    # print(remove_comma(ret.text))
-                    print(f"(('{engrave1}', {i[0]}), ('{engrave2}', {i[1]}), {remove_comma(ret.text)}), ")
-                    if q[0] == 11:
-                        neck.append(((engrave1, i[0]), (engrave2, i[1]), remove_comma(ret.text)))
-                    elif q[0] == 12:
-                        if q[1] == 1:
-                            ear1.append(((engrave1, i[0]), (engrave2, i[1]), remove_comma(ret.text)))
-                        else:
-                            ear2.append(((engrave1, i[0]), (engrave2, i[1]), remove_comma(ret.text)))
-                    else:
-                        if q[1] == 1:
-                            rin1.append(((engrave1, i[0]), (engrave2, i[1]), remove_comma(ret.text)))
-                        else:
-                            rin2.append(((engrave1, i[0]), (engrave2, i[1]), remove_comma(ret.text)))
+                    ret = remove_comma(ret.text)
                 except (selenium.common.exceptions.NoSuchElementException, AttributeError):
-                    # print("매물 없음")
-                    print(f"(('{engrave1}', {i[0]}), ('{engrave2}', {i[1]}), 1000000), ")
-                driver.find_element_by_xpath(
-                    '//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]/button[2]').click()
-    driver.quit()
+                    try:
+                        print("아무것도 없음, 재검색")
+                        ret = 1000000
+                        driver.find_element_by_xpath('//*[@id="btnSearch"]').click()
+                        driver.implicitly_wait(3)
+                        ret = driver.find_element_by_xpath('//*[@id="auctionListTbody"]/tr[1]/td[5]/div/em')
+                        ret = remove_comma(ret.text)
+                    except (selenium.common.exceptions.NoSuchElementException, AttributeError):
+                        ret = 1000000
+                    # print(remove_comma(ret.text))
+                print(f"(('{engrave1}', {i[0]}), ('{engrave2}', {i[1]}), {ret}), ")
+                if q[0] == 11:
+                    neck.append(((engrave1, i[0]), (engrave2, i[1]), ret))
+                elif q[0] == 12:
+                    if q[1] == 1:
+                        ear1.append(((engrave1, i[0]), (engrave2, i[1]), ret))
+                    else:
+                        ear2.append(((engrave1, i[0]), (engrave2, i[1]), ret))
+                else:
+                    if q[1] == 1:
+                        rin1.append(((engrave1, i[0]), (engrave2, i[1]), ret))
+                    else:
+                        rin2.append(((engrave1, i[0]), (engrave2, i[1]), ret))
+                    driver.find_element_by_xpath('//*[@id="btnSearch"]').click()
+                time.sleep(2)
+                try:
+                    driver.find_element_by_xpath(
+                        '//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]/button[2]').click()
+                except selenium.common.exceptions.ElementClickInterceptedException:
+                    time.sleep(2)
+                    driver.find_element_by_xpath(
+                        '//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]/button[2]').click()
+        driver.quit()
     return neck, ear1, ear2, rin1, rin2
 
 
@@ -459,7 +456,7 @@ if __name__ == "__main__":
                    "타격의 대가": 77, "탈출의 명수": 78, "폭발물 전문가": 79, "피스메이커": 80, "핸드거너": 81, "화력 강화": 82,
                    "황제의 칙령": 83, "황후의 은총": 84}
     # auction_search(engrave_dic, *receive_input_data(engrave_dic))
-    auction_search(engrave_dic, auction_set(engrave_dic), 1, '치명', '신속', '치명', '신속', '치명', '신속', {'원한': 15, '예리한 둔기': 15, '돌격대장': 15, '상급 소환사': 15, '넘치는 교감': 15}, {'원한': 7, '돌격대장': 6, '공격력 감소': 4})
+    auction_search(engrave_dic, 1, '치명', '신속', '치명', '신속', '치명', '신속', {'원한': 15, '예리한 둔기': 15, '돌격대장': 15, '상급 소환사': 15, '넘치는 교감': 15}, {'원한': 7, '돌격대장': 6, '공격력 감소': 4})
 
 
 """
