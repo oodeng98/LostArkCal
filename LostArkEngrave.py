@@ -200,7 +200,7 @@ def find_min_set(necklace, earring1, earring2, ring1, ring2, target, ab_stone, b
             test[y[1]] += u[1]
             if u[0] == 12:
                 book = book_price[y[0]] * 20
-            else:
+            if u[1] == 12:
                 book = book_price[y[1]] * 20
             for q in necklace:
                 temp1 = over_15_check(test, q)
@@ -221,7 +221,8 @@ def find_min_set(necklace, earring1, earring2, ring1, ring2, target, ab_stone, b
                             for t in ring2:
                                 temp5 = over_15_check(temp4, t)
                                 if type(temp5) != int:
-                                    total.append((y, u, book, q, w, e, r, t, q[-1] + w[-1] + e[-1] + r[-1] + t[-1] + book))
+                                    total.append(
+                                        (y, u, book, q, w, e, r, t, q[-1] + w[-1] + e[-1] + r[-1] + t[-1] + book))
 
     total.sort(key=lambda x: x[-1])
     for i in range(10):
@@ -353,19 +354,19 @@ def auction_search(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, tar
                         ret = 1000000
                     # print(remove_comma(ret.text))
                 print(f"(('{engrave1}', {i[0]}), ('{engrave2}', {i[1]}), {ret}), ")
-                if q[0] == 11:
-                    _neck.append(((engrave1, i[0]), (engrave2, i[1]), ret))
-                elif q[0] == 12:
-                    if q[1] == 1:
-                        _ear1.append(((engrave1, i[0]), (engrave2, i[1]), ret))
+                if ret != 1000000:
+                    if q[0] == 11:
+                        _neck.append(((engrave1, i[0]), (engrave2, i[1]), ret))
+                    elif q[0] == 12:
+                        if q[1] == 1:
+                            _ear1.append(((engrave1, i[0]), (engrave2, i[1]), ret))
+                        else:
+                            _ear2.append(((engrave1, i[0]), (engrave2, i[1]), ret))
                     else:
-                        _ear2.append(((engrave1, i[0]), (engrave2, i[1]), ret))
-                else:
-                    if q[1] == 1:
-                        _rin1.append(((engrave1, i[0]), (engrave2, i[1]), ret))
-                    else:
-                        _rin2.append(((engrave1, i[0]), (engrave2, i[1]), ret))
-                    driver.find_element_by_xpath('//*[@id="btnSearch"]').click()
+                        if q[1] == 1:
+                            _rin1.append(((engrave1, i[0]), (engrave2, i[1]), ret))
+                        else:
+                            _rin2.append(((engrave1, i[0]), (engrave2, i[1]), ret))
                 try:
                     driver.find_element_by_xpath(
                         '//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]/button[2]').click()
@@ -397,17 +398,16 @@ if __name__ == "__main__":
                    "아르데타인의 기술": 43, "안정된 상태": 44, "약자 무시": 45, "에테르 포식자": 46, "여신의 가호": 47, "역천지체": 48,
                    "연속 포격": 49, "예리한 둔기": 50, "오의 강화": 51, "오의난무": 52, "완벽한 억제": 53, "원한": 54, "위기 모면": 55,
                    "일격필살": 56, "잔재된 기운": 57, "저주받은 인형": 58, "전문의": 59, "전투 태세": 60, "절실한 구원": 61, "절정": 62,
-                   "절제": 63, "정기 흡수": 64, "정밀 단도": 65, "죽음의 습격": 66, "중갑 착용": 67, "중력 수련": 68, "진실된 용맹": 69,
-                   "진화의 유산": 70, "질량 증가": 71, "초심": 72, "최대 마나 증가": 73, "추진력": 74, "축복의 오라": 75, "충격 단련": 76,
-                   "타격의 대가": 77, "탈출의 명수": 78, "폭발물 전문가": 79, "피스메이커": 80, "핸드거너": 81, "화력 강화": 82,
-                   "황제의 칙령": 83, "황후의 은총": 84}
+                   "절제": 63, "점화": 64, "정기 흡수": 65, "정밀 단도": 66, "죽음의 습격": 67, "중갑 착용": 68, "중력 수련": 69, "진실된 용맹": 70,
+                   "진화의 유산": 71, "질량 증가": 72, "초심": 73, "최대 마나 증가": 74, "추진력": 75, "축복의 오라": 76, "충격 단련": 77,
+                   "타격의 대가": 78, "탈출의 명수": 79, "폭발물 전문가": 80, "피스메이커": 81, "핸드거너": 82, "화력 강화": 83,
+                   "황제의 칙령": 84, "황후의 은총": 85}
     start = time.time()
-    find_min_set(*auction_search(engrave_dic, 1, '치명', '신속', '신속', '신속', '신속', '신속',
-                                 {'원한': 15, '극의: 체술': 15, '돌격대장': 15, '아드레날린': 15, '기습의 대가': 15}),
-                 {'원한': 7, '돌격대장': 7}, find_price({'원한': 15, '극의: 체술': 15, '돌격대장': 15, '아드레날린': 15, '기습의 대가': 15}))
+    find_min_set(*auction_search(engrave_dic, 7, '치명', '특화', '특화', '치명', '특화', '특화',
+                                 {'원한': 15, '일격필살': 15, '정기 흡수': 15, '예리한 둔기': 15, '기습의 대가': 15}),
+                 {'예리한 둔기': 7, '기습의 대가': 6}, find_price({'원한': 15, '일격필살': 15, '정기 흡수': 15, '예리한 둔기': 15, '기습의 대가': 15}))
     finish = time.time()
     print(finish - start)
-
 
 """
 입력 예시
