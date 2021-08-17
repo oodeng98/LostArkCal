@@ -181,6 +181,7 @@ def find_min_set(necklace, earring1, earring2, ring1, ring2, target, ab_stone, b
     # 각인 효과1, 각인 수치1, 각인 효과2, 각인 수치2, 가격
     # 치명 신속 목걸이
     book_case = itertools.combinations(set(target.keys()) - set(ab_stone.keys()), 2)  # 어빌리티 스톤에 들어있지 않은 각인들
+    read_book = [(9, 12), (12, 9), (12, 12)]
     default = {}
     for i in target:
         if i in ab_stone:
@@ -193,8 +194,9 @@ def find_min_set(necklace, earring1, earring2, ring1, ring2, target, ab_stone, b
     ring1.sort(key=lambda x: x[2])
     ring2.sort(key=lambda x: x[2])
     total = []
+    min_price = 0  # 나중에 최저가를 넘으면 바로 반복문을 멈추는 기능도 넣으면 더 빨라질듯
     for y in tqdm(book_case):
-        for u in [(9, 12), (12, 9)]:
+        for u in read_book:
             test = copy.deepcopy(default)
             test[y[0]] += u[0]
             test[y[1]] += u[1]
@@ -219,20 +221,27 @@ def find_min_set(necklace, earring1, earring2, ring1, ring2, target, ab_stone, b
                             if type(temp4) == int:
                                 continue
                             for t in ring2:
+                                check = 0
                                 temp5 = over_15_check(temp4, t)
                                 if type(temp5) != int:
-                                    total.append(
-                                        (y, u, book, q, w, e, r, t, q[-1] + w[-1] + e[-1] + r[-1] + t[-1] + book))
+                                    # print(temp5)
+                                    for i in temp5:
+                                        if temp5[i] != 15:
+                                            check = 1
+                                            break
+                                    if not check:
+                                        total.append(
+                                            (y, u, book, q, w, e, r, t, q[-1] + w[-1] + e[-1] + r[-1] + t[-1] + book))
 
     total.sort(key=lambda x: x[-1])
     for i in range(10):
         print(total[i])
 
 
-def auction_set(engrave_dict):
+def auction_set(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, q):
     # 창이 열리지 않고 수행하게 하는 코드. 단, 이 코드를 사용하면 프로그램을 종료할 때 driver.quit()를 꼭 사용해줘야 한다
     options = webdriver.ChromeOptions()  # 크롬 옵션 객체 생성
-    # options.add_argument('headless')  # headless 모드 설정
+    options.add_argument('headless')  # headless 모드 설정
 
     driver = webdriver.Chrome('chromedriver', options=options)
     driver.get(url='https://lostark.game.onstove.com/Auction')
@@ -244,6 +253,60 @@ def auction_set(engrave_dict):
     driver.find_element_by_xpath('//*[@id="selItemGrade"]/div[2]/label[7]').click()
     driver.find_element_by_xpath('//*[@id="selItemTier"]/div[1]').click()
     driver.find_element_by_xpath('//*[@id="selItemTier"]/div[2]/label[4]').click()
+
+    # 품질 설정
+    driver.find_element_by_xpath('//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]'
+                                 '/button[2]').click()
+    driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[1]/div[1]/table/tbody/tr[4]/td[2]/div/'
+                                 'div[1]').click()
+    driver.find_element_by_xpath(f'//*[@id="modal-deal-option"]/div/div/div[1]/div[1]/table/tbody/tr[4]/td[2]/div/'
+                                 f'div[2]/label[{qual}]').click()
+    driver.find_element_by_xpath('//*[@id="selCategoryDetail"]/div[1]').click()
+    driver.find_element_by_xpath(f'//*[@id="selCategoryDetail"]/div[2]/label[{q[0]}]').click()
+
+    # 전투 특성 설정
+    battle_dict = {"치명": 2, "특화": 3, "신속": 5}
+    # 목걸이용 전투 특성 설정
+    if q[0] == 11:
+        # 특성 1 설정
+        driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[1]').click()
+        driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[2]/label[2]').click()
+        driver.find_element_by_xpath('//*[@id="selEtcSub_0"]/div[1]').click()
+        driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[neck1]}]').click()
+        # 특성 2 설정
+        driver.find_element_by_xpath('//*[@id="selEtc_1"]/div[1]').click()
+        driver.find_element_by_xpath('//*[@id="selEtc_1"]/div[2]/label[2]').click()
+        driver.find_element_by_xpath('//*[@id="selEtcSub_1"]/div[1]').click()
+        driver.find_element_by_xpath(f'//*[@id="selEtcSub_1"]/div[2]/label[{battle_dict[neck2]}]').click()
+        print(f'{neck1} {neck2} 목걸이')
+    elif q[0] == 12:
+        # 특성 1 설정
+        driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[1]').click()
+        driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[2]/label[2]').click()
+        driver.find_element_by_xpath('//*[@id="selEtcSub_0"]/div[1]').click()
+        if q[1] == 1:
+            driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[ear1]}]').click()
+            print(f'{ear1} 귀걸이')
+        else:
+            driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[ear2]}]').click()
+            print(f'{ear2} 귀걸이')
+    else:
+        driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[1]').click()
+        driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[2]/label[2]').click()
+        driver.find_element_by_xpath('//*[@id="selEtcSub_0"]/div[1]').click()
+        if q[1] == 1:
+            driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[rin1]}]').click()
+            print(f'{rin1} 반지')
+        else:
+            driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[rin2]}]').click()
+            print(f'{rin2} 반지')
+    # 각인1 설정
+    driver.find_element_by_xpath('//*[@id="selEtc_2"]/div[1]').click()
+    driver.find_element_by_xpath('//*[@id="selEtc_2"]/div[2]/label[3]').click()
+
+    # 각인2 설정
+    driver.find_element_by_xpath('//*[@id="selEtc_3"]/div[1]').click()
+    driver.find_element_by_xpath('//*[@id="selEtc_3"]/div[2]/label[3]').click()
 
     return driver
 
@@ -259,73 +322,19 @@ def auction_search(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, tar
     _ear2 = []
     _rin1 = []
     _rin2 = []
-    battle_dict = {"치명": 2, "특화": 3, "신속": 5}
     for q in [(11, 1), (12, 1), (12, 2), (13, 1), (13, 2)]:
-        driver = auction_set(engrave_dict)
-        # 품질 설정
-        driver.find_element_by_xpath('//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]'
-                                     '/button[2]').click()
-        driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[1]/div[1]/table/tbody/tr[4]/td[2]/div/'
-                                     'div[1]').click()
-        driver.find_element_by_xpath(f'//*[@id="modal-deal-option"]/div/div/div[1]/div[1]/table/tbody/tr[4]/td[2]/div/'
-                                     f'div[2]/label[{qual}]').click()
-        driver.find_element_by_xpath('//*[@id="selCategoryDetail"]/div[1]').click()
-        driver.find_element_by_xpath(f'//*[@id="selCategoryDetail"]/div[2]/label[{q[0]}]').click()
-
-        # 전투 특성 설정
-        # 목걸이용 전투 특성 설정
-        if q[0] == 11:
-            # 특성 1 설정
-            driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[1]').click()
-            driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[2]/label[2]').click()
-            driver.find_element_by_xpath('//*[@id="selEtcSub_0"]/div[1]').click()
-            driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[neck1]}]').click()
-            # 특성 2 설정
-            driver.find_element_by_xpath('//*[@id="selEtc_1"]/div[1]').click()
-            driver.find_element_by_xpath('//*[@id="selEtc_1"]/div[2]/label[2]').click()
-            driver.find_element_by_xpath('//*[@id="selEtcSub_1"]/div[1]').click()
-            driver.find_element_by_xpath(f'//*[@id="selEtcSub_1"]/div[2]/label[{battle_dict[neck2]}]').click()
-            print(f'{neck1} {neck2} 목걸이')
-        elif q[0] == 12:
-            # 특성 1 설정
-            driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[1]').click()
-            driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[2]/label[2]').click()
-            driver.find_element_by_xpath('//*[@id="selEtcSub_0"]/div[1]').click()
-            if q[1] == 1:
-                driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[ear1]}]').click()
-                print(f'{ear1} 귀걸이')
-            else:
-                if ear1 == ear2:
-                    _ear2 = _ear1
-                    continue
-                driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[ear2]}]').click()
-                print(f'{ear2} 귀걸이')
-        else:
-            driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[1]').click()
-            driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[2]/label[2]').click()
-            driver.find_element_by_xpath('//*[@id="selEtcSub_0"]/div[1]').click()
-            if q[1] == 1:
-                driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[rin1]}]').click()
-                print(f'{rin1} 반지')
-            else:
-                if rin1 == rin2:
-                    _rin2 = _rin1
-                    continue
-                driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[rin2]}]').click()
-                print(f'{rin2} 반지')
-        # 각인1 설정
-        driver.find_element_by_xpath('//*[@id="selEtc_2"]/div[1]').click()
-        driver.find_element_by_xpath('//*[@id="selEtc_2"]/div[2]/label[3]').click()
-
-        # 각인2 설정
-        driver.find_element_by_xpath('//*[@id="selEtc_3"]/div[1]').click()
-        driver.find_element_by_xpath('//*[@id="selEtc_3"]/div[2]/label[3]').click()
-
+        if q == (12, 2):
+            if ear1 == ear2:
+                continue
+        elif q == (13, 2):
+            if rin1 == rin2:
+                continue
         for w in itertools.combinations(target.keys(), 2):
+            driver = auction_set(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, q)
             engrave1 = w[0]
             engrave2 = w[1]
             # 최소 수치 설정
-            for i in [(3, 5), (5, 3)]:
+            for i in [(3, 5), (5, 3), (3, 4), (4, 3), (3, 3)]:
                 driver.find_element_by_xpath('//*[@id="selEtcSub_2"]/div[1]').click()
                 driver.find_element_by_xpath(f'//*[@id="selEtcSub_2"]/div[2]/label[{engrave_dict[engrave1]}]').click()
                 input_box = driver.find_element_by_id("txtEtcMin_2")
@@ -374,7 +383,7 @@ def auction_search(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, tar
                     time.sleep(2)
                     driver.find_element_by_xpath(
                         '//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]/button[2]').click()
-        driver.quit()
+            driver.quit()
     return _neck, _ear1, _ear2, _rin1, _rin2, target
 
 
@@ -403,9 +412,9 @@ if __name__ == "__main__":
                    "타격의 대가": 78, "탈출의 명수": 79, "폭발물 전문가": 80, "피스메이커": 81, "핸드거너": 82, "화력 강화": 83,
                    "황제의 칙령": 84, "황후의 은총": 85}
     start = time.time()
-    find_min_set(*auction_search(engrave_dic, 7, '치명', '특화', '특화', '치명', '특화', '특화',
-                                 {'원한': 15, '일격필살': 15, '정기 흡수': 15, '예리한 둔기': 15, '기습의 대가': 15}),
-                 {'예리한 둔기': 7, '기습의 대가': 6}, find_price({'원한': 15, '일격필살': 15, '정기 흡수': 15, '예리한 둔기': 15, '기습의 대가': 15}))
+    find_min_set(*auction_search(engrave_dic, 4, '치명', '신속', '신속', '신속', '신속', '신속',
+                                 {'원한': 15, '극의: 체술': 15, '돌격대장': 15, '아드레날린': 15, '기습의 대가': 15}),
+                 {'원한': 9, '돌격대장': 6}, find_price({'원한': 15, '극의: 체술': 15, '돌격대장': 15, '아드레날린': 15, '기습의 대가': 15}))
     finish = time.time()
     print(finish - start)
 
@@ -438,3 +447,4 @@ if __name__ == "__main__":
 4
 
 """
+# 읽은 전설 각인을 입력받으면, 그 전설각인서의 가격을 0으로 만들고 프로그램을 돌리면 된다
