@@ -15,7 +15,7 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
 
 from multiprocessing import Pool
-
+#test massage
 
 def find_price(target):
     _target = copy.deepcopy(target)
