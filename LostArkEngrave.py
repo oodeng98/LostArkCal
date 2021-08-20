@@ -17,9 +17,12 @@ from selenium.webdriver.support.ui import WebDriverWait
 from multiprocessing import Pool
 #test massage
 
-def find_price(target):
+def find_price(target, zero_list):
     _target = copy.deepcopy(target)
-    driver = webdriver.Chrome('chromedriver')
+    options = webdriver.ChromeOptions()  # 크롬 옵션 객체 생성
+    options.add_argument('headless')  # headless 모드 설정
+
+    driver = webdriver.Chrome('chromedriver', options=options)
     driver.implicitly_wait(5)
 
     driver.get(url='https://lostark.game.onstove.com/Market')
@@ -31,6 +34,9 @@ def find_price(target):
         '//*[@id="lostark-wrapper"]/div/main/div/div[2]/div[2]/form/fieldset/div/div[3]/div[2]/div/div[2]/label[6]').click()
 
     for i in _target:
+        if i in zero_list:
+            _target[i] = 0
+            continue
         search_box.send_keys(i)
         search_box.send_keys(Keys.RETURN)
         time.sleep(0.3)
@@ -45,8 +51,8 @@ def find_price(target):
             _target[i] = remove_comma(ret.text)
         else:
             _target[i] = ret
-        print(_target[i])
-    print(_target)
+    # print(_target)
+    driver.quit()
     return _target
 
 
@@ -59,12 +65,17 @@ def receive_input_data(engrave_dict):
     print("선택과 투자, 그리고 과금은 모두 사용자의 책임입니다. 서비스 지원 업체는 해당 부분은 보상하지 않습니다.")
     while True:
         try:
-            qual = int(input("원하는 품질 하한선을 0, 10...80, 90 중 선택하여 입력해주세요: "))
-            if qual % 10:
+            neck_qual = int(input("목걸이의 품질 하한선을 0, 10...80, 90 중 선택하여 입력해주세요: "))
+            earring_qual = int(input("귀걸이의 품질 하한선을 0, 10...80, 90 중 선택하여 입력해주세요: "))
+            ring_qual = int(input("반지의 품질 하한선을 0, 10...80, 90 중 선택하여 입력해주세요: "))
+            if neck_qual % 10 or earring_qual % 10 or ring_qual % 10:
                 raise ValueError
+            neck_qual = neck_qual // 10 + 1
+            earring_qual = earring_qual // 10 + 1
+            ring_qual = ring_qual // 10 + 1
             break
         except ValueError:
-            print("잘못 입력하셨습니다. 다시 입력해주세요.")
+            print("잘못 입력하셨습니다. 다시 입력해주세요: ")
 
     while True:
         print("모든 전투특성 입력은 치명, 신속, 특화 이 세가지 중 한가지입니다. 다른 경우는 고려하지 않습니다.")
@@ -77,7 +88,7 @@ def receive_input_data(engrave_dict):
         if not {neck1, neck2, ear1, ear2, rin1, rin2} - {'치명', '신속', '특화'}:
             break
         else:
-            print("잘못 입력하셨습니다. 다시 입력해주세요.")
+            print("잘못 입력하셨습니다. 다시 입력해주세요: ")
 
     target_dic = {}
     while True:
@@ -113,7 +124,7 @@ def receive_input_data(engrave_dict):
                 print(f"[{i}]", end=" ")
             temp1 = input("중 어빌리티 스톤의 맨 위에 존재하는 각인을 입력해주세요: ")
             while temp1 not in target_dic:
-                temp1 = input("잘못 입력하셨거나 목표 각인에 해당하지 않는 각인입니다. 다시 입력해주세요.")
+                temp1 = input("잘못 입력하셨거나 목표 각인에 해당하지 않는 각인입니다. 다시 입력해주세요: ")
             temp1_num = int(input(f"{temp1} 각인의 어빌리티 스톤 수치를 입력해주세요: "))
 
             for i in target_dic:
@@ -122,7 +133,7 @@ def receive_input_data(engrave_dict):
                 print(f"[{i}]", end=" ")
             temp2 = input("중 어빌리티 스톤의 두번째에 존재하는 각인을 입력해주세요: ")
             while temp2 not in target_dic:
-                temp2 = input("잘못 입력하셨거나 목표 각인에 해당하지 않는 각인입니다. 다시 입력해주세요.")
+                temp2 = input("잘못 입력하셨거나 목표 각인에 해당하지 않는 각인입니다. 다시 입력해주세요: ")
             if temp1 == temp2:
                 print("어빌리티 스톤의 두 각인은 같을 수 없습니다. 처음부터 다시 입력해주세요.")
                 continue
@@ -144,37 +155,27 @@ def receive_input_data(engrave_dict):
                 continue
             else:
                 while check == "" or check == "1":
-                    input("잘못 입력하셨습니다. 입력한 내용이 정확하다면 그냥 스페이스를, 수정하고 싶으시다면 1을 입력해주세요: ")
+                    input("잘못 입력하셨습니다. 입력한 내용이 정확하다면 그냥 엔터를, 수정하고 싶으시다면 1을 입력해주세요: ")
         except ValueError:
             print("잘못 입력하셨습니다. 숫자로 입력해주세요.")
+    already_read = []
+    while True:
+        for i in target_dic:
+            if i in already_read:
+                continue
+            print(f"[{i}]", end=" ")
+        temp = input("중 이미 읽은 전설 각인서를 입력해주세요. 입력하신 각인서는 20장 모두 읽은 것으로 간주합니다,"
+                     " 다 입력했다면 그냥 엔터를 입력해주세요: ")
+        if temp == "":
+            break
+        elif temp not in target_dic:
+            print("잘못 입력하셨습니다, 목표 각인 중 이미 읽은 전설 각인서를 입력해주세요.")
+            continue
+        already_read.append(temp)
+
     print("시간이 좀 걸립니다, 잠시 기다려주세요...")
 
-    return qual + 1, neck1, neck2, ear1, ear2, rin1, rin2, target_dic, ability_stone
-
-
-def find_accessory_cases():
-    all_cases = []
-    comb = list(itertools.combinations([0, 1, 2, 3, 4], 2))
-    engrave_case = [(3, 3), (3, 4), (4, 3), (3, 5), (5, 3)]
-    for i in comb:
-        for j in engrave_case:
-            temp = [0, 0, 0, 0, 0]
-            temp[i[0]], temp[i[1]] = j
-            all_cases.append(temp)
-    return all_cases
-
-
-def find_book_cases():
-    all_cases = []
-    comb = list(itertools.combinations([0, 1, 2, 3, 4], 2))
-    # engrave_case = [(9, 9), (9, 12), (12, 9), (12, 12)]
-    engrave_case = [(12, 9), (9, 12)]  # 12, 9의 케이스를 찾기 위한 줄, 나중에는 없애야함
-    for i in comb:
-        for j in engrave_case:
-            temp = [0, 0, 0, 0, 0]
-            temp[i[0]], temp[i[1]] = j
-            all_cases.append(temp)
-    return all_cases
+    return neck_qual, earring_qual, ring_qual, neck1, neck2, ear1, ear2, rin1, rin2, target_dic, ability_stone, already_read
 
 
 def find_min_set(necklace, earring1, earring2, ring1, ring2, target, ab_stone, book_price):
@@ -195,15 +196,16 @@ def find_min_set(necklace, earring1, earring2, ring1, ring2, target, ab_stone, b
     ring2.sort(key=lambda x: x[2])
     total = []
     min_price = 0  # 나중에 최저가를 넘으면 바로 반복문을 멈추는 기능도 넣으면 더 빨라질듯
-    for y in tqdm(book_case):
+    for y in book_case:
         for u in read_book:
+            book = 0
             test = copy.deepcopy(default)
             test[y[0]] += u[0]
             test[y[1]] += u[1]
             if u[0] == 12:
-                book = book_price[y[0]] * 20
+                book += book_price[y[0]] * 20
             if u[1] == 12:
-                book = book_price[y[1]] * 20
+                book += book_price[y[1]] * 20
             for q in necklace:
                 temp1 = over_15_check(test, q)
                 if type(temp1) == int:
@@ -224,7 +226,6 @@ def find_min_set(necklace, earring1, earring2, ring1, ring2, target, ab_stone, b
                                 check = 0
                                 temp5 = over_15_check(temp4, t)
                                 if type(temp5) != int:
-                                    # print(temp5)
                                     for i in temp5:
                                         if temp5[i] != 15:
                                             check = 1
@@ -238,10 +239,26 @@ def find_min_set(necklace, earring1, earring2, ring1, ring2, target, ab_stone, b
         print(total[i])
 
 
-def auction_set(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, q):
+def auction_set(qual, neck1, neck2, ear1, ear2, rin1, rin2, q):
     # 창이 열리지 않고 수행하게 하는 코드. 단, 이 코드를 사용하면 프로그램을 종료할 때 driver.quit()를 꼭 사용해줘야 한다
     options = webdriver.ChromeOptions()  # 크롬 옵션 객체 생성
     options.add_argument('headless')  # headless 모드 설정
+    options.add_argument("window-size=1920x1080")  # 화면크기(전체화면)
+    options.add_argument("disable-gpu")
+    options.add_argument("disable-infobars")
+    options.add_argument("--disable-extensions")
+
+    # 속도 향상을 위한 옵션 해제
+    prefs = {'profile.default_content_setting_values': {'cookies': 2, 'images': 2, 'plugins': 2, 'popups': 2,
+                                                        'geolocation': 2, 'notifications': 2,
+                                                        'auto_select_certificate': 2, 'fullscreen': 2, 'mouselock': 2,
+                                                        'mixed_script': 2, 'media_stream': 2, 'media_stream_mic': 2,
+                                                        'media_stream_camera': 2, 'protocol_handlers': 2,
+                                                        'ppapi_broker': 2, 'automatic_downloads': 2, 'midi_sysex': 2,
+                                                        'push_messaging': 2, 'ssl_cert_decisions': 2,
+                                                        'metro_switch_to_desktop': 2, 'protected_media_identifier': 2,
+                                                        'app_banner': 2, 'site_engagement': 2, 'durable_storage': 2}}
+    options.add_experimental_option('prefs', prefs)
 
     driver = webdriver.Chrome('chromedriver', options=options)
     driver.get(url='https://lostark.game.onstove.com/Auction')
@@ -278,7 +295,7 @@ def auction_set(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, q):
         driver.find_element_by_xpath('//*[@id="selEtc_1"]/div[2]/label[2]').click()
         driver.find_element_by_xpath('//*[@id="selEtcSub_1"]/div[1]').click()
         driver.find_element_by_xpath(f'//*[@id="selEtcSub_1"]/div[2]/label[{battle_dict[neck2]}]').click()
-        print(f'{neck1} {neck2} 목걸이')
+        # print(f'{neck1} {neck2} 목걸이')
     elif q[0] == 12:
         # 특성 1 설정
         driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[1]').click()
@@ -286,20 +303,20 @@ def auction_set(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, q):
         driver.find_element_by_xpath('//*[@id="selEtcSub_0"]/div[1]').click()
         if q[1] == 1:
             driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[ear1]}]').click()
-            print(f'{ear1} 귀걸이')
+            # print(f'{ear1} 귀걸이')
         else:
             driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[ear2]}]').click()
-            print(f'{ear2} 귀걸이')
+            # print(f'{ear2} 귀걸이')
     else:
         driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[1]').click()
         driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[2]/label[2]').click()
         driver.find_element_by_xpath('//*[@id="selEtcSub_0"]/div[1]').click()
         if q[1] == 1:
             driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[rin1]}]').click()
-            print(f'{rin1} 반지')
+            # print(f'{rin1} 반지')
         else:
             driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[rin2]}]').click()
-            print(f'{rin2} 반지')
+            # print(f'{rin2} 반지')
     # 각인1 설정
     driver.find_element_by_xpath('//*[@id="selEtc_2"]/div[1]').click()
     driver.find_element_by_xpath('//*[@id="selEtc_2"]/div[2]/label[3]').click()
@@ -315,22 +332,30 @@ def remove_comma(ret):
     return int(ret.replace(",", ""))
 
 
-def auction_search(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, target):
+def auction_search(engrave_dict, neck_qual, earring_qual, ring_qual, neck1, neck2, ear1, ear2, rin1, rin2, target):
     # 카테고리 설정
     _neck = []
     _ear1 = []
     _ear2 = []
     _rin1 = []
     _rin2 = []
-    for q in [(11, 1), (12, 1), (12, 2), (13, 1), (13, 2)]:
+    for q in tqdm([(11, 1), (12, 1), (12, 2), (13, 1), (13, 2)]):
         if q == (12, 2):
             if ear1 == ear2:
+                _ear2 = _ear1
                 continue
         elif q == (13, 2):
             if rin1 == rin2:
+                _rin2 = _rin1
                 continue
+        if q[0] == 11:
+            qual = neck_qual
+        elif q[0] == 12:
+            qual = earring_qual
+        else:
+            qual = ring_qual
         for w in itertools.combinations(target.keys(), 2):
-            driver = auction_set(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, q)
+            driver = auction_set(qual, neck1, neck2, ear1, ear2, rin1, rin2, q)
             engrave1 = w[0]
             engrave2 = w[1]
             # 최소 수치 설정
@@ -349,7 +374,7 @@ def auction_search(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, tar
                 driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[2]/button[1]').click()
                 # driver.find_element_by_xpath('//*[@id="BUY_PRICE"]').click(), 즉시 구매가 기준으로 정렬해주는 건데 안먹힌다
                 try:
-                    time.sleep(2)
+                    time.sleep(1)
                     ret = driver.find_element_by_xpath('//*[@id="auctionListTbody"]/tr[1]/td[5]/div/em')
                     ret = remove_comma(ret.text)
                 except (selenium.common.exceptions.NoSuchElementException, AttributeError):
@@ -362,7 +387,7 @@ def auction_search(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, tar
                     except (selenium.common.exceptions.NoSuchElementException, AttributeError):
                         ret = 1000000
                     # print(remove_comma(ret.text))
-                print(f"(('{engrave1}', {i[0]}), ('{engrave2}', {i[1]}), {ret}), ")
+                # print(f"(('{engrave1}', {i[0]}), ('{engrave2}', {i[1]}), {ret}), ")
                 if ret != 1000000:
                     if q[0] == 11:
                         _neck.append(((engrave1, i[0]), (engrave2, i[1]), ret))
@@ -412,39 +437,10 @@ if __name__ == "__main__":
                    "타격의 대가": 78, "탈출의 명수": 79, "폭발물 전문가": 80, "피스메이커": 81, "핸드거너": 82, "화력 강화": 83,
                    "황제의 칙령": 84, "황후의 은총": 85}
     start = time.time()
-    find_min_set(*auction_search(engrave_dic, 4, '치명', '신속', '신속', '신속', '신속', '신속',
-                                 {'원한': 15, '극의: 체술': 15, '돌격대장': 15, '아드레날린': 15, '기습의 대가': 15}),
-                 {'원한': 9, '돌격대장': 6}, find_price({'원한': 15, '극의: 체술': 15, '돌격대장': 15, '아드레날린': 15, '기습의 대가': 15}))
+    qual1, qual2, qual3, a2, a3, a4, a5, a6, a7, a8, a9, a10 = receive_input_data(engrave_dic)
+    find_min_set(*auction_search(engrave_dic, qual1, qual2, qual3, a2, a3, a4, a5, a6, a7, a8), a9, find_price(a8, a10))
     finish = time.time()
     print(finish - start)
-
-"""
-입력 예시
-0
-치명
-신속
-치명
-신속
-치명
-신속
-원한
-3
-예리한 둔기
-3
-돌격대장
-3
-상급 소환사
-3
-넘치는 교감
-3
-
-
-원한
-7
-돌격대장
-6
-공격력 감소
-4
-
-"""
-# 읽은 전설 각인을 입력받으면, 그 전설각인서의 가격을 0으로 만들고 프로그램을 돌리면 된다
+# 33각인을 먼저 검색한 다음 없으면 그 다음 검색들도 안해줘도 되는데?
+# 로스트아크 전투정보실에서 가져와야되나?
+# 이제 디버프 각인도 고려해봐야함

@@ -31,7 +31,10 @@ def find_price(searchbox, xpath, target):
 
 
 def find_all_price():
-    driver = webdriver.Chrome('chromedriver')
+    options = webdriver.ChromeOptions()  # 크롬 옵션 객체 생성
+    options.add_argument('headless')  # headless 모드 설정
+
+    driver = webdriver.Chrome('chromedriver', options=options)
     driver.implicitly_wait(5)
 
     driver.get(url='https://lostark.game.onstove.com/Market')
@@ -87,7 +90,6 @@ def find_all_price():
 
 
 def find_production_price(material_price_list, discount):
-    # 빛나는 ~~를 어떻게 처리해야 하나?
     data = pd.read_excel('영지 제작 아이템.xlsx')
     data = data.fillna(0)
     data = data.to_dict('index')
@@ -149,8 +151,10 @@ def find_benefit(production_cost, production_count, sell_cost):
     """
     ret = {}
     for i in item_dict:
-        ret[i] = round(production_count[i] * sell_cost[i] - production_cost[i], 2)
-    print(sorted(list(zip(ret.keys(), ret.values())), key=lambda x: x[1], reverse=True))
+        ret[i] = int(production_count[i] * int(sell_cost[i] * 0.95) - production_cost[i])
+    df = sorted(list(zip(ret.keys(), ret.values())), key=lambda x: x[1], reverse=True)
+    df = pd.DataFrame(df, columns=['Name', 'Benefit'])
+    print(df)
     return ret
 
 
@@ -159,7 +163,6 @@ if __name__ == "__main__":
     item_price_dict = find_all_price()
     item_production_price_dict, item_production_count_dict = find_production_price(item_price_dict, discount_rate)
     find_benefit(item_production_price_dict, item_production_count_dict, item_price_dict)
-    # 정리를 조금 해줘야 할 것 같은데 어떻게 제작 방법을 효율적으로 정리할지는 모르겠다
-
+    # 특수 제작 외에도 물약 할인률이라던지 그런것도 입력받는게 좋겠다
 
 
