@@ -56,7 +56,7 @@ QUERY = {
 }
 
 
-def main():
+def main(kwargs):
     session = Session()
     request = Request(
         method='POST',
@@ -65,10 +65,11 @@ def main():
             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36',
         },
-        data=QUERY
+        data=kwargs
     )
 
     response = session.send(request.prepare())
+    return response.text
 
 
 if __name__ == '__main__':
