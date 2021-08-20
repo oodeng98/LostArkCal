@@ -51,7 +51,7 @@ def find_price(target, zero_list):
             _target[i] = remove_comma(ret.text)
         else:
             _target[i] = ret
-
+    # print(_target)
     driver.quit()
     return _target
 
@@ -65,9 +65,14 @@ def receive_input_data(engrave_dict):
     print("선택과 투자, 그리고 과금은 모두 사용자의 책임입니다. 서비스 지원 업체는 해당 부분은 보상하지 않습니다.")
     while True:
         try:
-            qual = int(input("원하는 품질 하한선을 0, 10...80, 90 중 선택하여 입력해주세요: "))
-            if qual % 10:
+            neck_qual = int(input("목걸이의 품질 하한선을 0, 10...80, 90 중 선택하여 입력해주세요: "))
+            earring_qual = int(input("귀걸이의 품질 하한선을 0, 10...80, 90 중 선택하여 입력해주세요: "))
+            ring_qual = int(input("반지의 품질 하한선을 0, 10...80, 90 중 선택하여 입력해주세요: "))
+            if neck_qual % 10 or earring_qual % 10 or ring_qual % 10:
                 raise ValueError
+            neck_qual = neck_qual // 10 + 1
+            earring_qual = earring_qual // 10 + 1
+            ring_qual = ring_qual // 10 + 1
             break
         except ValueError:
             print("잘못 입력하셨습니다. 다시 입력해주세요: ")
@@ -156,6 +161,8 @@ def receive_input_data(engrave_dict):
     already_read = []
     while True:
         for i in target_dic:
+            if i in already_read:
+                continue
             print(f"[{i}]", end=" ")
         temp = input("중 이미 읽은 전설 각인서를 입력해주세요. 입력하신 각인서는 20장 모두 읽은 것으로 간주합니다,"
                      " 다 입력했다면 그냥 엔터를 입력해주세요: ")
@@ -164,12 +171,11 @@ def receive_input_data(engrave_dict):
         elif temp not in target_dic:
             print("잘못 입력하셨습니다, 목표 각인 중 이미 읽은 전설 각인서를 입력해주세요.")
             continue
-
         already_read.append(temp)
 
     print("시간이 좀 걸립니다, 잠시 기다려주세요...")
 
-    return qual // 10 + 1, neck1, neck2, ear1, ear2, rin1, rin2, target_dic, ability_stone, already_read
+    return neck_qual, earring_qual, ring_qual, neck1, neck2, ear1, ear2, rin1, rin2, target_dic, ability_stone, already_read
 
 
 def find_min_set(necklace, earring1, earring2, ring1, ring2, target, ab_stone, book_price):
@@ -191,8 +197,8 @@ def find_min_set(necklace, earring1, earring2, ring1, ring2, target, ab_stone, b
     total = []
     min_price = 0  # 나중에 최저가를 넘으면 바로 반복문을 멈추는 기능도 넣으면 더 빨라질듯
     for y in book_case:
-        book = 0
         for u in read_book:
+            book = 0
             test = copy.deepcopy(default)
             test[y[0]] += u[0]
             test[y[1]] += u[1]
@@ -237,6 +243,22 @@ def auction_set(qual, neck1, neck2, ear1, ear2, rin1, rin2, q):
     # 창이 열리지 않고 수행하게 하는 코드. 단, 이 코드를 사용하면 프로그램을 종료할 때 driver.quit()를 꼭 사용해줘야 한다
     options = webdriver.ChromeOptions()  # 크롬 옵션 객체 생성
     options.add_argument('headless')  # headless 모드 설정
+    options.add_argument("window-size=1920x1080")  # 화면크기(전체화면)
+    options.add_argument("disable-gpu")
+    options.add_argument("disable-infobars")
+    options.add_argument("--disable-extensions")
+
+    # 속도 향상을 위한 옵션 해제
+    prefs = {'profile.default_content_setting_values': {'cookies': 2, 'images': 2, 'plugins': 2, 'popups': 2,
+                                                        'geolocation': 2, 'notifications': 2,
+                                                        'auto_select_certificate': 2, 'fullscreen': 2, 'mouselock': 2,
+                                                        'mixed_script': 2, 'media_stream': 2, 'media_stream_mic': 2,
+                                                        'media_stream_camera': 2, 'protocol_handlers': 2,
+                                                        'ppapi_broker': 2, 'automatic_downloads': 2, 'midi_sysex': 2,
+                                                        'push_messaging': 2, 'ssl_cert_decisions': 2,
+                                                        'metro_switch_to_desktop': 2, 'protected_media_identifier': 2,
+                                                        'app_banner': 2, 'site_engagement': 2, 'durable_storage': 2}}
+    options.add_experimental_option('prefs', prefs)
 
     driver = webdriver.Chrome('chromedriver', options=options)
     driver.get(url='https://lostark.game.onstove.com/Auction')
@@ -310,14 +332,14 @@ def remove_comma(ret):
     return int(ret.replace(",", ""))
 
 
-def auction_search(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, target):
+def auction_search(engrave_dict, neck_qual, earring_qual, ring_qual, neck1, neck2, ear1, ear2, rin1, rin2, target):
     # 카테고리 설정
     _neck = []
     _ear1 = []
     _ear2 = []
     _rin1 = []
     _rin2 = []
-    for q in [(11, 1), (12, 1), (12, 2), (13, 1), (13, 2)]:
+    for q in tqdm([(11, 1), (12, 1), (12, 2), (13, 1), (13, 2)]):
         if q == (12, 2):
             if ear1 == ear2:
                 _ear2 = _ear1
@@ -326,6 +348,12 @@ def auction_search(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, tar
             if rin1 == rin2:
                 _rin2 = _rin1
                 continue
+        if q[0] == 11:
+            qual = neck_qual
+        elif q[0] == 12:
+            qual = earring_qual
+        else:
+            qual = ring_qual
         for w in itertools.combinations(target.keys(), 2):
             driver = auction_set(qual, neck1, neck2, ear1, ear2, rin1, rin2, q)
             engrave1 = w[0]
@@ -346,7 +374,7 @@ def auction_search(engrave_dict, qual, neck1, neck2, ear1, ear2, rin1, rin2, tar
                 driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[2]/button[1]').click()
                 # driver.find_element_by_xpath('//*[@id="BUY_PRICE"]').click(), 즉시 구매가 기준으로 정렬해주는 건데 안먹힌다
                 try:
-                    time.sleep(2)
+                    time.sleep(1)
                     ret = driver.find_element_by_xpath('//*[@id="auctionListTbody"]/tr[1]/td[5]/div/em')
                     ret = remove_comma(ret.text)
                 except (selenium.common.exceptions.NoSuchElementException, AttributeError):
@@ -409,8 +437,8 @@ if __name__ == "__main__":
                    "타격의 대가": 78, "탈출의 명수": 79, "폭발물 전문가": 80, "피스메이커": 81, "핸드거너": 82, "화력 강화": 83,
                    "황제의 칙령": 84, "황후의 은총": 85}
     start = time.time()
-    a1, a2, a3, a4, a5, a6, a7, a8, a9, a10 = receive_input_data(engrave_dic)
-    find_min_set(*auction_search(engrave_dic, a1, a2, a3, a4, a5, a6, a7, a8), a9, find_price(a8, a10))
+    qual1, qual2, qual3, a2, a3, a4, a5, a6, a7, a8, a9, a10 = receive_input_data(engrave_dic)
+    find_min_set(*auction_search(engrave_dic, qual1, qual2, qual3, a2, a3, a4, a5, a6, a7, a8), a9, find_price(a8, a10))
     finish = time.time()
     print(finish - start)
 # 33각인을 먼저 검색한 다음 없으면 그 다음 검색들도 안해줘도 되는데?
