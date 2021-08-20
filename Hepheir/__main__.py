@@ -53,6 +53,7 @@ QUERY = {
     "request[etcOptionList][3][firstOption]": "",
     "request[etcOptionList][3][secondOption]": "",
     "request[etcOptionList][3][minValue]": "",
+    "request[etcOptionList][3][maxValue]": ""
 }
 
 
@@ -73,4 +74,4 @@ def main(kwargs):
 
 
 if __name__ == '__main__':
-    main()
+    main(QUERY)
