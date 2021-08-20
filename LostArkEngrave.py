@@ -3,6 +3,7 @@ import itertools
 import time
 import copy
 from tqdm import tqdm
+from bs4 import BeautifulSoup
 
 from selenium import webdriver
 from selenium.webdriver import ActionChains
@@ -14,8 +15,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
 
-from multiprocessing import Pool
-#test massage
+from Hepheir.__main__ import main as search_key
+from Hepheir.__main__ import QUERY
+
 
 def find_price(target, zero_list):
     _target = copy.deepcopy(target)
@@ -240,92 +242,43 @@ def find_min_set(necklace, earring1, earring2, ring1, ring2, target, ab_stone, b
 
 
 def auction_set(qual, neck1, neck2, ear1, ear2, rin1, rin2, q):
-    # 창이 열리지 않고 수행하게 하는 코드. 단, 이 코드를 사용하면 프로그램을 종료할 때 driver.quit()를 꼭 사용해줘야 한다
-    options = webdriver.ChromeOptions()  # 크롬 옵션 객체 생성
-    options.add_argument('headless')  # headless 모드 설정
-    options.add_argument("window-size=1920x1080")  # 화면크기(전체화면)
-    options.add_argument("disable-gpu")
-    options.add_argument("disable-infobars")
-    options.add_argument("--disable-extensions")
-
-    # 속도 향상을 위한 옵션 해제
-    prefs = {'profile.default_content_setting_values': {'cookies': 2, 'images': 2, 'plugins': 2, 'popups': 2,
-                                                        'geolocation': 2, 'notifications': 2,
-                                                        'auto_select_certificate': 2, 'fullscreen': 2, 'mouselock': 2,
-                                                        'mixed_script': 2, 'media_stream': 2, 'media_stream_mic': 2,
-                                                        'media_stream_camera': 2, 'protocol_handlers': 2,
-                                                        'ppapi_broker': 2, 'automatic_downloads': 2, 'midi_sysex': 2,
-                                                        'push_messaging': 2, 'ssl_cert_decisions': 2,
-                                                        'metro_switch_to_desktop': 2, 'protected_media_identifier': 2,
-                                                        'app_banner': 2, 'site_engagement': 2, 'durable_storage': 2}}
-    options.add_experimental_option('prefs', prefs)
-
-    driver = webdriver.Chrome('chromedriver', options=options)
-    driver.get(url='https://lostark.game.onstove.com/Auction')
-
-    driver.implicitly_wait(2.5)
-
-    # 아이템 등급과 티어 설정
-    driver.find_element_by_xpath('//*[@id="selItemGrade"]/div[1]').click()
-    driver.find_element_by_xpath('//*[@id="selItemGrade"]/div[2]/label[7]').click()
-    driver.find_element_by_xpath('//*[@id="selItemTier"]/div[1]').click()
-    driver.find_element_by_xpath('//*[@id="selItemTier"]/div[2]/label[4]').click()
-
-    # 품질 설정
-    driver.find_element_by_xpath('//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]'
-                                 '/button[2]').click()
-    driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[1]/div[1]/table/tbody/tr[4]/td[2]/div/'
-                                 'div[1]').click()
-    driver.find_element_by_xpath(f'//*[@id="modal-deal-option"]/div/div/div[1]/div[1]/table/tbody/tr[4]/td[2]/div/'
-                                 f'div[2]/label[{qual}]').click()
-    driver.find_element_by_xpath('//*[@id="selCategoryDetail"]/div[1]').click()
-    driver.find_element_by_xpath(f'//*[@id="selCategoryDetail"]/div[2]/label[{q[0]}]').click()
+    condition = QUERY
+    condition["request[firstCategory]"] = "200000"
+    condition["request[secondCategory]"] = "200010"  # 200010, 200020, 200030, 목걸이, 귀걸이, 팔찌
+    condition["request[itemTier]"] = "3"  # 아이템 티어
+    condition["request[itemGrade]"] = "5"  # 아이템 등급 유물로
+    condition["request[gradeQuality]"] = str(qual)  # 아이템 등급, 10으로 나눠지지 않아도 무관함
 
     # 전투 특성 설정
-    battle_dict = {"치명": 2, "특화": 3, "신속": 5}
+    battle_dict = {"치명": "15", "특화": "16", "신속": "18"}
+
     # 목걸이용 전투 특성 설정
     if q[0] == 11:
-        # 특성 1 설정
-        driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[1]').click()
-        driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[2]/label[2]').click()
-        driver.find_element_by_xpath('//*[@id="selEtcSub_0"]/div[1]').click()
-        driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[neck1]}]').click()
-        # 특성 2 설정
-        driver.find_element_by_xpath('//*[@id="selEtc_1"]/div[1]').click()
-        driver.find_element_by_xpath('//*[@id="selEtc_1"]/div[2]/label[2]').click()
-        driver.find_element_by_xpath('//*[@id="selEtcSub_1"]/div[1]').click()
-        driver.find_element_by_xpath(f'//*[@id="selEtcSub_1"]/div[2]/label[{battle_dict[neck2]}]').click()
-        # print(f'{neck1} {neck2} 목걸이')
+        # 특성 설정
+        condition["request[etcOptionList][0][firstOption]"] = "2"
+        condition["request[etcOptionList][0][secondOption]"] = battle_dict[neck1]
+        condition["request[etcOptionList][1][firstOption]"] = "2"
+        condition["request[etcOptionList][1][secondOption]"] = battle_dict[neck2]
     elif q[0] == 12:
-        # 특성 1 설정
-        driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[1]').click()
-        driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[2]/label[2]').click()
-        driver.find_element_by_xpath('//*[@id="selEtcSub_0"]/div[1]').click()
+        # 특성 설정
         if q[1] == 1:
-            driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[ear1]}]').click()
-            # print(f'{ear1} 귀걸이')
+            condition["request[etcOptionList][0][firstOption]"] = "2"
+            condition["request[etcOptionList][0][secondOption]"] = battle_dict[ear1]
         else:
-            driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[ear2]}]').click()
-            # print(f'{ear2} 귀걸이')
+            condition["request[etcOptionList][0][firstOption]"] = "2"
+            condition["request[etcOptionList][0][secondOption]"] = battle_dict[ear2]
     else:
-        driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[1]').click()
-        driver.find_element_by_xpath('//*[@id="selEtc_0"]/div[2]/label[2]').click()
-        driver.find_element_by_xpath('//*[@id="selEtcSub_0"]/div[1]').click()
         if q[1] == 1:
-            driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[rin1]}]').click()
-            # print(f'{rin1} 반지')
+            condition["request[etcOptionList][0][firstOption]"] = "2"
+            condition["request[etcOptionList][0][secondOption]"] = battle_dict[rin1]
         else:
-            driver.find_element_by_xpath(f'//*[@id="selEtcSub_0"]/div[2]/label[{battle_dict[rin2]}]').click()
-            # print(f'{rin2} 반지')
+            condition["request[etcOptionList][0][firstOption]"] = "2"
+            condition["request[etcOptionList][0][secondOption]"] = battle_dict[rin2]
+    return condition
+
     # 각인1 설정
-    driver.find_element_by_xpath('//*[@id="selEtc_2"]/div[1]').click()
-    driver.find_element_by_xpath('//*[@id="selEtc_2"]/div[2]/label[3]').click()
 
     # 각인2 설정
-    driver.find_element_by_xpath('//*[@id="selEtc_3"]/div[1]').click()
-    driver.find_element_by_xpath('//*[@id="selEtc_3"]/div[2]/label[3]').click()
-
-    return driver
 
 
 def remove_comma(ret):
@@ -355,60 +308,28 @@ def auction_search(engrave_dict, neck_qual, earring_qual, ring_qual, neck1, neck
         else:
             qual = ring_qual
         for w in itertools.combinations(target.keys(), 2):
-            driver = auction_set(qual, neck1, neck2, ear1, ear2, rin1, rin2, q)
+            condition = auction_set(qual, neck1, neck2, ear1, ear2, rin1, rin2, q)
             engrave1 = w[0]
             engrave2 = w[1]
             # 최소 수치 설정
             for i in [(3, 5), (5, 3), (3, 4), (4, 3), (3, 3)]:
-                driver.find_element_by_xpath('//*[@id="selEtcSub_2"]/div[1]').click()
-                driver.find_element_by_xpath(f'//*[@id="selEtcSub_2"]/div[2]/label[{engrave_dict[engrave1]}]').click()
-                input_box = driver.find_element_by_id("txtEtcMin_2")
-                input_box.send_keys(i[0])
+                condition["request[etcOptionList][2][firstOption]"] = "3"
+                condition["request[etcOptionList][2][secondOption]"] = str(engrave_dict[engrave1])
+                condition["request[etcOptionList][2][minValue]"] = str(i[0])
 
-                driver.find_element_by_xpath('//*[@id="selEtcSub_3"]/div[1]').click()
-                driver.find_element_by_xpath(f'//*[@id="selEtcSub_3"]/div[2]/label[{engrave_dict[engrave2]}]').click()
-                input_box = driver.find_element_by_id("txtEtcMin_3")
-                input_box.send_keys(i[1])
+                condition["request[etcOptionList][3][firstOption]"] = "3"
+                condition["request[etcOptionList][3][secondOption]"] = str(engrave_dict[engrave2])
+                condition["request[etcOptionList][3][minValue]"] = str(i[1])
 
-                # 검색 버튼 클릭
-                driver.find_element_by_xpath('//*[@id="modal-deal-option"]/div/div/div[2]/button[1]').click()
-                # driver.find_element_by_xpath('//*[@id="BUY_PRICE"]').click(), 즉시 구매가 기준으로 정렬해주는 건데 안먹힌다
-                try:
-                    time.sleep(1)
-                    ret = driver.find_element_by_xpath('//*[@id="auctionListTbody"]/tr[1]/td[5]/div/em')
-                    ret = remove_comma(ret.text)
-                except (selenium.common.exceptions.NoSuchElementException, AttributeError):
-                    try:
-                        # print("아무것도 없음, 재검색")
-                        ret = 1000000
-                        driver.find_element_by_xpath('//*[@id="btnSearch"]').click()
-                        ret = driver.find_element_by_xpath('//*[@id="auctionListTbody"]/tr[1]/td[5]/div/em')
-                        ret = remove_comma(ret.text)
-                    except (selenium.common.exceptions.NoSuchElementException, AttributeError):
-                        ret = 1000000
-                    # print(remove_comma(ret.text))
-                # print(f"(('{engrave1}', {i[0]}), ('{engrave2}', {i[1]}), {ret}), ")
-                if ret != 1000000:
-                    if q[0] == 11:
-                        _neck.append(((engrave1, i[0]), (engrave2, i[1]), ret))
-                    elif q[0] == 12:
-                        if q[1] == 1:
-                            _ear1.append(((engrave1, i[0]), (engrave2, i[1]), ret))
-                        else:
-                            _ear2.append(((engrave1, i[0]), (engrave2, i[1]), ret))
-                    else:
-                        if q[1] == 1:
-                            _rin1.append(((engrave1, i[0]), (engrave2, i[1]), ret))
-                        else:
-                            _rin2.append(((engrave1, i[0]), (engrave2, i[1]), ret))
-                try:
-                    driver.find_element_by_xpath(
-                        '//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]/button[2]').click()
-                except selenium.common.exceptions.ElementClickInterceptedException:
-                    time.sleep(2)
-                    driver.find_element_by_xpath(
-                        '//*[@id="lostark-wrapper"]/div/main/div/div[3]/div[2]/form/fieldset/div/div[5]/button[2]').click()
-            driver.quit()
+                ret = search_key(condition)
+                with open('result.html', 'w', encoding='utf-8') as f:
+                    f.write(ret)
+                soup = BeautifulSoup(ret, "html.parser")
+                tag = soup.select_one("#auctionListTbody > tr:nth-child(1) > td:nth-child(1)"
+                                      " > div.effect > ul:nth-child(1) > li:nth-child(1) > font:nth-child(2)")
+                print(tag.text)
+                return
+
     return _neck, _ear1, _ear2, _rin1, _rin2, target
 
 
@@ -423,24 +344,25 @@ def over_15_check(engrave, new):
 
 
 if __name__ == "__main__":
-    engrave_dic = {"각성": 2, "갈증": 3, "강령술": 4, "강화 무기": 5, "강화 방패": 6, "결투의 대가": 7, "고독한 기사": 8, "광기": 9,
-                   "광전사의 비기": 10, "구슬동자": 11, "굳은 의지": 12, "극의: 체술": 13, "급소 타격": 14, "기습의 대가": 15, "긴급구조": 16,
-                   "넘치는 교감": 17, "달의 소리": 18, "달인의 저력": 19, "돌격대장": 20, "두 번째 동료": 21, "마나 효율 증가": 22,
-                   "마나의 흐름": 23, "멈출 수 없는 충동": 24, "바리케이드": 25, "버스트": 26, "번개의 분노": 27, "부러진 뼈": 28,
-                   "분노의 망치": 29, "분쇄의 주먹": 30, "불굴": 31, "사냥의 시간": 32, "상급 소환사": 33, "선수필승": 34, "세맥타통": 35,
-                   "속전속결": 36, "슈퍼 차지": 37, "승부사": 38, "시선 집중": 39, "실드 관통": 40, "심판자": 41, "아드레날린": 42,
-                   "아르데타인의 기술": 43, "안정된 상태": 44, "약자 무시": 45, "에테르 포식자": 46, "여신의 가호": 47, "역천지체": 48,
-                   "연속 포격": 49, "예리한 둔기": 50, "오의 강화": 51, "오의난무": 52, "완벽한 억제": 53, "원한": 54, "위기 모면": 55,
-                   "일격필살": 56, "잔재된 기운": 57, "저주받은 인형": 58, "전문의": 59, "전투 태세": 60, "절실한 구원": 61, "절정": 62,
-                   "절제": 63, "점화": 64, "정기 흡수": 65, "정밀 단도": 66, "죽음의 습격": 67, "중갑 착용": 68, "중력 수련": 69, "진실된 용맹": 70,
-                   "진화의 유산": 71, "질량 증가": 72, "초심": 73, "최대 마나 증가": 74, "추진력": 75, "축복의 오라": 76, "충격 단련": 77,
-                   "타격의 대가": 78, "탈출의 명수": 79, "폭발물 전문가": 80, "피스메이커": 81, "핸드거너": 82, "화력 강화": 83,
-                   "황제의 칙령": 84, "황후의 은총": 85}
-    start = time.time()
-    qual1, qual2, qual3, a2, a3, a4, a5, a6, a7, a8, a9, a10 = receive_input_data(engrave_dic)
-    find_min_set(*auction_search(engrave_dic, qual1, qual2, qual3, a2, a3, a4, a5, a6, a7, a8), a9, find_price(a8, a10))
-    finish = time.time()
-    print(finish - start)
+    engrave_dic = {'각성': 255, '갈증': 286, '강령술': 243, '강화 무기': 129, '강화 방패': 242, '결투의 대가': 288,
+                   '고독한 기사': 225, '광기': 125, '광전사의 비기': 188, '구슬동자': 134, '굳은 의지': 123, '극의: 체술': 190,
+                   '급소 타격': 142, '기습의 대가': 249, '긴급구조': 302, '넘치는 교감': 199, '달의 소리': 287, '달인의 저력': 238,
+                   '돌격대장': 254, '두 번째 동료': 258, '마나 효율 증가': 168, '마나의 흐름': 251, '멈출 수 없는 충동': 281,
+                   '바리케이드': 253, '버스트': 279, '번개의 분노': 246, '부러진 뼈': 245, '분노의 망치': 196, '분쇄의 주먹': 236,
+                   '불굴': 235, '사냥의 시간': 290, '상급 소환사': 198, '선수필승': 244, '세맥타통': 256, '속전속결': 300,
+                   '슈퍼 차지': 121, '승부사': 248, '시선 집중': 298, '실드 관통': 237, '심판자': 282, '아드레날린': 299,
+                   '아르데타인의 기술': 284, '안정된 상태': 111, '약자 무시': 107, '에테르 포식자': 110, '여신의 가호': 239,
+                   '역천지체': 257, '연속 포격': 193, '예리한 둔기': 141, '오의 강화': 127, '오의난무': 292, '완벽한 억제': 280,
+                   '원한': 118, '위기 모면': 140, '일격필살': 291, '잔재된 기운': 278, '저주받은 인형': 247, '전문의': 301,
+                   '전투 태세': 224, '절실한 구원': 195, '절정': 276, '절제': 277, '점화': 293, '정기 흡수': 109, '정밀 단도': 303,
+                   '죽음의 습격': 259, '중갑 착용': 240, '중력 수련': 197, '진실된 용맹': 194, '진화의 유산': 285, '질량 증가': 295,
+                   '초심': 189, '최대 마나 증가': 167, '추진력': 296, '축복의 오라': 283, '충격 단련': 191, '타격의 대가': 297,
+                   '탈출의 명수': 202, '폭발물 전문가': 241, '피스메이커': 289, '핸드거너': 192, '화력 강화': 130, '환류': 294,
+                   '황제의 칙령': 201, '황후의 은총': 200}
+    # qual1, qual2, qual3, a2, a3, a4, a5, a6, a7, a8, a9, a10 = receive_input_data(engrave_dic)
+    # find_min_set(*auction_search(engrave_dic, qual1, qual2, qual3, a2, a3, a4, a5, a6, a7, a8), a9, find_price(a8, a10))
+    auction_search(engrave_dic, 60, 0, 0, "치명", "신속", "치명", "치명", "치명", "치명",
+                   {"원한": 15, "돌격대장": 15, "저주받은 인형": 15, "예리한 둔기": 15, "아르데타인의 기술": 15})
 # 33각인을 먼저 검색한 다음 없으면 그 다음 검색들도 안해줘도 되는데?
 # 로스트아크 전투정보실에서 가져와야되나?
 # 이제 디버프 각인도 고려해봐야함
