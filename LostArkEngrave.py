@@ -19,6 +19,14 @@ from Hepheir.__main__ import main as search_key
 from Hepheir.__main__ import QUERY
 
 
+class ACCESSORY:
+    total_data: BeautifulSoup
+    name: str
+    effect = {}
+    price_low: int
+    price_buy: int
+
+
 def find_price(target, zero_list):
     _target = copy.deepcopy(target)
     options = webdriver.ChromeOptions()  # 크롬 옵션 객체 생성
@@ -183,6 +191,7 @@ def receive_input_data(engrave_dict):
 def find_min_set(necklace, earring1, earring2, ring1, ring2, target, ab_stone, book_price):
     # 각인 효과1, 각인 수치1, 각인 효과2, 각인 수치2, 가격
     # 치명 신속 목걸이
+    print(necklace, earring1, earring2, ring1, ring2)
     book_case = itertools.combinations(set(target.keys()) - set(ab_stone.keys()), 2)  # 어빌리티 스톤에 들어있지 않은 각인들
     read_book = [(9, 12), (12, 9), (12, 12)]
     default = {}
@@ -191,11 +200,11 @@ def find_min_set(necklace, earring1, earring2, ring1, ring2, target, ab_stone, b
             default[i] = ab_stone[i]
         else:
             default[i] = 0
-    necklace.sort(key=lambda x: x[2])
-    earring1.sort(key=lambda x: x[2])
-    earring2.sort(key=lambda x: x[2])
-    ring1.sort(key=lambda x: x[2])
-    ring2.sort(key=lambda x: x[2])
+    necklace.sort(key=lambda x: x.price_low)
+    earring1.sort(key=lambda x: x.price_low)
+    earring2.sort(key=lambda x: x.price_low)
+    ring1.sort(key=lambda x: x.price_low)
+    ring2.sort(key=lambda x: x.price_low)
     total = []
     min_price = 0  # 나중에 최저가를 넘으면 바로 반복문을 멈추는 기능도 넣으면 더 빨라질듯
     for y in book_case:
@@ -234,7 +243,8 @@ def find_min_set(necklace, earring1, earring2, ring1, ring2, target, ab_stone, b
                                             break
                                     if not check:
                                         total.append(
-                                            (y, u, book, q, w, e, r, t, q[-1] + w[-1] + e[-1] + r[-1] + t[-1] + book))
+                                            (y, u, book, q, w, e, r, t,
+                                             q.price_low + w.price_low + e.price_low + r.price_low + t.price_low + book))
 
     total.sort(key=lambda x: x[-1])
     for i in range(10):
@@ -244,7 +254,7 @@ def find_min_set(necklace, earring1, earring2, ring1, ring2, target, ab_stone, b
 def auction_set(qual, neck1, neck2, ear1, ear2, rin1, rin2, q):
     condition = QUERY
     condition["request[firstCategory]"] = "200000"
-    condition["request[secondCategory]"] = "200010"  # 200010, 200020, 200030, 목걸이, 귀걸이, 팔찌
+    condition["request[secondCategory]"] = "200010"  # 200010, 200020, 200030, 목걸이, 귀걸이, 반지
     condition["request[itemTier]"] = "3"  # 아이템 티어
     condition["request[itemGrade]"] = "5"  # 아이템 등급 유물로
     condition["request[gradeQuality]"] = str(qual)  # 아이템 등급, 10으로 나눠지지 않아도 무관함
@@ -276,10 +286,6 @@ def auction_set(qual, neck1, neck2, ear1, ear2, rin1, rin2, q):
             condition["request[etcOptionList][0][secondOption]"] = battle_dict[rin2]
     return condition
 
-    # 각인1 설정
-
-    # 각인2 설정
-
 
 def remove_comma(ret):
     return int(ret.replace(",", ""))
@@ -287,19 +293,16 @@ def remove_comma(ret):
 
 def auction_search(engrave_dict, neck_qual, earring_qual, ring_qual, neck1, neck2, ear1, ear2, rin1, rin2, target):
     # 카테고리 설정
-    _neck = []
-    _ear1 = []
-    _ear2 = []
-    _rin1 = []
-    _rin2 = []
-    for q in tqdm([(11, 1), (12, 1), (12, 2), (13, 1), (13, 2)]):
+    data = []
+    for q in [(11, 1), (12, 1), (12, 2), (13, 1), (13, 2)]:
+        temp_list = []
         if q == (12, 2):
             if ear1 == ear2:
-                _ear2 = _ear1
+                data.append(data[-1])
                 continue
         elif q == (13, 2):
             if rin1 == rin2:
-                _rin2 = _rin1
+                data.append(data[-1])
                 continue
         if q[0] == 11:
             qual = neck_qual
@@ -321,22 +324,43 @@ def auction_search(engrave_dict, neck_qual, earring_qual, ring_qual, neck1, neck
                 condition["request[etcOptionList][3][secondOption]"] = str(engrave_dict[engrave2])
                 condition["request[etcOptionList][3][minValue]"] = str(i[1])
 
+                condition["request[pageNo]"] = "1"
+
                 ret = search_key(condition)
+                accessory = ACCESSORY  # 값이 계속 마지막 값으로 변화한다
                 with open('result.html', 'w', encoding='utf-8') as f:
                     f.write(ret)
                 soup = BeautifulSoup(ret, "html.parser")
-                tag = soup.select_one("#auctionListTbody > tr:nth-child(1) > td:nth-child(1)"
-                                      " > div.effect > ul:nth-child(1) > li:nth-child(1) > font:nth-child(2)")
-                print(tag.text)
-                return
-
-    return _neck, _ear1, _ear2, _rin1, _rin2, target
+                accessory.total_data = soup
+                try:
+                    table = soup.select_one("#auctionListTbody > tr:nth-child(1) > td:nth-child(1)")
+                    accessory.price_low = soup.select_one("#auctionListTbody > tr:nth-child(1) > td:nth-child(5)"
+                                                          " > div > em").text.strip()
+                    accessory.price_buy = soup.select_one("#auctionListTbody > tr:nth-child(1) > td:nth-child(6)"
+                                                          " > div > em").text.strip()
+                    for index in range(1, 4):
+                        temp = table.select_one(f"#auctionListTbody > tr:nth-child(1) > td:nth-child(1) > div.effect"
+                                                f" > ul:nth-child(1) > li:nth-child({index})").text.split(']')
+                        accessory.effect[temp[0][1:]] = int(temp[-1][-1])
+                        # print(temp[0][1:], temp[-1][-1])
+                    temp_list.append(accessory)
+                except AttributeError:
+                    # print("매물 없음")
+                    continue
+                # 아무것도 없는 부분의 table을 가져오고 .text를 이용해서 내용을 보려고 하면 NoneType으로 나옴, AttributeError 발생
+                # real_price = soup.select_one("#auctionListTbody > tr:nth-child(2 여기가 아래 부분으로 내려가게 만드는 코드) > td:nth-child(6) > div > em")
+        data.append(temp_list)
+    for i in data:
+        for j in i:
+            print(j.price_low, j.effect)
+    return *data, target
 
 
 def over_15_check(engrave, new):
     temp = copy.copy(engrave)
-    temp[new[0][0]] += new[0][1]
-    temp[new[1][0]] += new[1][1]
+    index = list(new.effect.keys())
+    temp[index[0]] += new.effect[index[0]]
+    temp[index[1]] += new.effect[index[1]]
     for i in temp:
         if temp[i] >= 16:
             return 0
@@ -361,8 +385,7 @@ if __name__ == "__main__":
                    '황제의 칙령': 201, '황후의 은총': 200}
     # qual1, qual2, qual3, a2, a3, a4, a5, a6, a7, a8, a9, a10 = receive_input_data(engrave_dic)
     # find_min_set(*auction_search(engrave_dic, qual1, qual2, qual3, a2, a3, a4, a5, a6, a7, a8), a9, find_price(a8, a10))
-    auction_search(engrave_dic, 60, 0, 0, "치명", "신속", "치명", "치명", "치명", "치명",
-                   {"원한": 15, "돌격대장": 15, "저주받은 인형": 15, "예리한 둔기": 15, "아르데타인의 기술": 15})
+    auction_search(engrave_dic, 0, 0, 0, "치명", "신속", "치명", "치명", "치명", "치명", {"원한": 15, "슈퍼 차지": 15, "바리케이드": 15, "결투의 대가": 15, "고독한 기사": 15})
 # 33각인을 먼저 검색한 다음 없으면 그 다음 검색들도 안해줘도 되는데?
 # 로스트아크 전투정보실에서 가져와야되나?
 # 이제 디버프 각인도 고려해봐야함
