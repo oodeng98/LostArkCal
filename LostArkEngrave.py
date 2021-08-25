@@ -20,8 +20,9 @@ from Hepheir.__main__ import QUERY
 
 
 class ACCESSORY:
+    def __init__(self, name):
+        self.name = name
     total_data: BeautifulSoup
-    name: str
     effect = {}
     price_low: int
     price_buy: int
@@ -61,7 +62,6 @@ def find_price(target, zero_list):
             _target[i] = remove_comma(ret.text)
         else:
             _target[i] = ret
-    # print(_target)
     driver.quit()
     return _target
 
@@ -189,9 +189,6 @@ def receive_input_data(engrave_dict):
 
 
 def find_min_set(necklace, earring1, earring2, ring1, ring2, target, ab_stone, book_price):
-    # 각인 효과1, 각인 수치1, 각인 효과2, 각인 수치2, 가격
-    # 치명 신속 목걸이
-    print(necklace, earring1, earring2, ring1, ring2)
     book_case = itertools.combinations(set(target.keys()) - set(ab_stone.keys()), 2)  # 어빌리티 스톤에 들어있지 않은 각인들
     read_book = [(9, 12), (12, 9), (12, 12)]
     default = {}
@@ -206,49 +203,48 @@ def find_min_set(necklace, earring1, earring2, ring1, ring2, target, ab_stone, b
     ring1.sort(key=lambda x: x.price_low)
     ring2.sort(key=lambda x: x.price_low)
     total = []
-    min_price = 0  # 나중에 최저가를 넘으면 바로 반복문을 멈추는 기능도 넣으면 더 빨라질듯
+    min_price = 1000000  # 나중에 최저가를 넘으면 바로 반복문을 멈추는 기능도 넣으면 더 빨라질듯
     for y in book_case:
         for u in read_book:
-            book = 0
+            price = 0
             test = copy.deepcopy(default)
             test[y[0]] += u[0]
             test[y[1]] += u[1]
             if u[0] == 12:
-                book += book_price[y[0]] * 20
+                price += book_price[y[0]] * 20
             if u[1] == 12:
-                book += book_price[y[1]] * 20
+                price += book_price[y[1]] * 20
             for q in necklace:
-                temp1 = over_15_check(test, q)
-                if type(temp1) == int:
+                temp1, price1 = stop_check(test, q, price)
+                if type(temp1) == int or min_price < price1:
                     continue
                 for w in earring1:
-                    temp2 = over_15_check(temp1, w)
-                    if type(temp2) == int:
+                    temp2, price2 = stop_check(temp1, w, price1)
+                    if type(temp2) == int or min_price < price2:
                         continue
                     for e in earring2:
-                        temp3 = over_15_check(temp2, e)
-                        if type(temp3) == int:
+                        temp3, price3 = stop_check(temp2, e, price2)
+                        if type(temp3) == int or min_price < price3:
                             continue
                         for r in ring1:
-                            temp4 = over_15_check(temp3, r)
-                            if type(temp4) == int:
+                            temp4, price4 = stop_check(temp3, r, price3)
+                            if type(temp4) == int or min_price < price4:
                                 continue
                             for t in ring2:
                                 check = 0
-                                temp5 = over_15_check(temp4, t)
-                                if type(temp5) != int:
+                                temp5, price5 = stop_check(temp4, t, price4)
+                                if type(temp5) != int or min_price < price5:
                                     for i in temp5:
                                         if temp5[i] != 15:
                                             check = 1
                                             break
                                     if not check:
-                                        total.append(
-                                            (y, u, book, q, w, e, r, t,
-                                             q.price_low + w.price_low + e.price_low + r.price_low + t.price_low + book))
-
+                                        total.append((y, u, price, q, w, e, r, t, price5))
+                                        min_price = min(min_price, price5)
+                                        # min_price를 구하는 순간 디버프를 고려한 새로운 min_price를 구해내고 그걸로 min_price를 바꾸는 방법은?
+                                        # 일단 지금은 단 하나의 경우의 수를 구하는 프로그램임
     total.sort(key=lambda x: x[-1])
-    for i in range(10):
-        print(total[i])
+    print(total)
 
 
 def auction_set(qual, neck1, neck2, ear1, ear2, rin1, rin2, q):
@@ -327,44 +323,43 @@ def auction_search(engrave_dict, neck_qual, earring_qual, ring_qual, neck1, neck
                 condition["request[pageNo]"] = "1"
 
                 ret = search_key(condition)
-                accessory = ACCESSORY  # 값이 계속 마지막 값으로 변화한다
                 with open('result.html', 'w', encoding='utf-8') as f:
                     f.write(ret)
                 soup = BeautifulSoup(ret, "html.parser")
-                accessory.total_data = soup
                 try:
+                    accessory = ACCESSORY(soup.select_one("#auctionListTbody > tr:nth-child(1) > td:nth-child(1)"
+                                                          " > div.grade > span.name").text)
+                    accessory.total_data = soup
                     table = soup.select_one("#auctionListTbody > tr:nth-child(1) > td:nth-child(1)")
                     accessory.price_low = soup.select_one("#auctionListTbody > tr:nth-child(1) > td:nth-child(5)"
                                                           " > div > em").text.strip()
                     accessory.price_buy = soup.select_one("#auctionListTbody > tr:nth-child(1) > td:nth-child(6)"
                                                           " > div > em").text.strip()
-                    for index in range(1, 4):
+                    for index in range(1, 3):  # 나중에 디버프도 고려하려면 3을 4로 바꾸면 된다
                         temp = table.select_one(f"#auctionListTbody > tr:nth-child(1) > td:nth-child(1) > div.effect"
                                                 f" > ul:nth-child(1) > li:nth-child({index})").text.split(']')
                         accessory.effect[temp[0][1:]] = int(temp[-1][-1])
-                        # print(temp[0][1:], temp[-1][-1])
-                    temp_list.append(accessory)
+                    temp_list.append(copy.deepcopy(accessory))
                 except AttributeError:
-                    # print("매물 없음")
                     continue
                 # 아무것도 없는 부분의 table을 가져오고 .text를 이용해서 내용을 보려고 하면 NoneType으로 나옴, AttributeError 발생
-                # real_price = soup.select_one("#auctionListTbody > tr:nth-child(2 여기가 아래 부분으로 내려가게 만드는 코드) > td:nth-child(6) > div > em")
+                # "#auctionListTbody > tr:nth-child(2 여기가 아래 부분으로 내려가게 만드는 코드) > td:nth-child(6) > div > em"
         data.append(temp_list)
-    for i in data:
-        for j in i:
-            print(j.price_low, j.effect)
     return *data, target
+# 최저가를 찾는 부분까지 동일하게 만들고, 최저가를 찾으면 해당 페이지들에서 다시 디버프를 고려한 새로운 최저가를 찾은 후
+# 새로운 최저가보다 낮은 기존 최저가를 가지고 있는 조합에서 또 그 과정을 반복해주면 찾을 수 있을 듯
 
 
-def over_15_check(engrave, new):
+def stop_check(engrave, new, previous_price):
     temp = copy.copy(engrave)
     index = list(new.effect.keys())
     temp[index[0]] += new.effect[index[0]]
     temp[index[1]] += new.effect[index[1]]
+    new_price = previous_price + new.price_low
     for i in temp:
         if temp[i] >= 16:
             return 0
-    return temp
+    return temp, new_price
 
 
 if __name__ == "__main__":
