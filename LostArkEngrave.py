@@ -2,7 +2,7 @@ import selenium
 import itertools
 import time
 import copy
-from tqdm import tqdm
+import requests
 from bs4 import BeautifulSoup
 
 from selenium import webdriver
@@ -37,6 +37,9 @@ def find_price(target, zero_list):
     driver.implicitly_wait(5)
 
     driver.get(url='https://lostark.game.onstove.com/Market')
+    driver.find_element_by_name('user_id').send_keys("oodeng98@gmail.com")
+    driver.find_element_by_name('user_pwd').send_keys("lostarkengrave24")
+    driver.find_element_by_xpath('//*[@id="idLogin"]/div[3]/button').click()
 
     search_box = driver.find_element_by_id('txtItemName')
     driver.find_element_by_xpath(
@@ -63,6 +66,7 @@ def find_price(target, zero_list):
         else:
             _target[i] = ret
     driver.quit()
+    print(_target)
     return _target
 
 
@@ -289,6 +293,7 @@ def remove_comma(ret):
 
 def auction_search(engrave_dict, neck_qual, earring_qual, ring_qual, neck1, neck2, ear1, ear2, rin1, rin2, target):
     # 카테고리 설정
+    session = auction_login()
     data = []
     for q in [(11, 1), (12, 1), (12, 2), (13, 1), (13, 2)]:
         temp_list = []
@@ -322,9 +327,11 @@ def auction_search(engrave_dict, neck_qual, earring_qual, ring_qual, neck1, neck
 
                 condition["request[pageNo]"] = "1"
 
-                ret = search_key(condition)
+                ret = search_key(condition, session)
                 with open('result.html', 'w', encoding='utf-8') as f:
                     f.write(ret)
+                print(ret)
+                return
                 soup = BeautifulSoup(ret, "html.parser")
                 try:
                     accessory = ACCESSORY(soup.select_one("#auctionListTbody > tr:nth-child(1) > td:nth-child(1)"
@@ -362,6 +369,30 @@ def stop_check(engrave, new, previous_price):
     return temp, new_price
 
 
+def auction_login():
+    options = webdriver.ChromeOptions()  # 크롬 옵션 객체 생성
+    options.add_argument('headless')  # headless 모드 설정
+
+    driver = webdriver.Chrome('chromedriver', options=options)
+    driver.implicitly_wait(5)
+
+    driver.get(url='https://lostark.game.onstove.com/Market')
+    driver.find_element_by_name('user_id').send_keys("oodeng98@gmail.com")
+    driver.find_element_by_name('user_pwd').send_keys("lostarkengrave24")
+    driver.find_element_by_xpath('//*[@id="idLogin"]/div[3]/button').click()
+
+    s = requests.Session()
+    headers = {
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36',
+    }
+    s.headers.update(headers)
+
+    for cookie in driver.get_cookies():
+        s.cookies.set(cookie['name'], cookie['value'])
+    return s
+
+
 if __name__ == "__main__":
     engrave_dic = {'각성': 255, '갈증': 286, '강령술': 243, '강화 무기': 129, '강화 방패': 242, '결투의 대가': 288,
                    '고독한 기사': 225, '광기': 125, '광전사의 비기': 188, '구슬동자': 134, '굳은 의지': 123, '극의: 체술': 190,
@@ -380,7 +411,9 @@ if __name__ == "__main__":
                    '황제의 칙령': 201, '황후의 은총': 200}
     # qual1, qual2, qual3, a2, a3, a4, a5, a6, a7, a8, a9, a10 = receive_input_data(engrave_dic)
     # find_min_set(*auction_search(engrave_dic, qual1, qual2, qual3, a2, a3, a4, a5, a6, a7, a8), a9, find_price(a8, a10))
-    auction_search(engrave_dic, 0, 0, 0, "치명", "신속", "치명", "치명", "치명", "치명", {"원한": 15, "슈퍼 차지": 15, "바리케이드": 15, "결투의 대가": 15, "고독한 기사": 15})
+    # auction_search(engrave_dic, 0, 0, 0, "치명", "신속", "치명", "치명", "치명", "치명", {"원한": 15, "슈퍼 차지": 15, "바리케이드": 15, "결투의 대가": 15, "고독한 기사": 15})
+    auction_login()
+
 # 33각인을 먼저 검색한 다음 없으면 그 다음 검색들도 안해줘도 되는데?
 # 로스트아크 전투정보실에서 가져와야되나?
 # 이제 디버프 각인도 고려해봐야함
