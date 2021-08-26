@@ -38,6 +38,9 @@ def find_all_price():
     driver.implicitly_wait(5)
 
     driver.get(url='https://lostark.game.onstove.com/Market')
+    driver.find_element_by_name('user_id').send_keys("oodeng98@gmail.com")
+    driver.find_element_by_name('user_pwd').send_keys("lostarkengrave24")
+    driver.find_element_by_xpath('//*[@id="idLogin"]/div[3]/button').click()
 
     search_box = driver.find_element_by_id('txtItemName')
 
