@@ -2,7 +2,8 @@ import selenium
 import itertools
 import time
 import copy
-import requests
+from requests import Request, Session
+import webbrowser
 from bs4 import BeautifulSoup
 
 from selenium import webdriver
@@ -293,7 +294,7 @@ def remove_comma(ret):
 
 def auction_search(engrave_dict, neck_qual, earring_qual, ring_qual, neck1, neck2, ear1, ear2, rin1, rin2, target):
     # 카테고리 설정
-    session = auction_login()
+    session = login()
     data = []
     for q in [(11, 1), (12, 1), (12, 2), (13, 1), (13, 2)]:
         temp_list = []
@@ -331,7 +332,6 @@ def auction_search(engrave_dict, neck_qual, earring_qual, ring_qual, neck1, neck
                 with open('result.html', 'w', encoding='utf-8') as f:
                     f.write(ret)
                 print(ret)
-                return
                 soup = BeautifulSoup(ret, "html.parser")
                 try:
                     accessory = ACCESSORY(soup.select_one("#auctionListTbody > tr:nth-child(1) > td:nth-child(1)"
@@ -369,28 +369,31 @@ def stop_check(engrave, new, previous_price):
     return temp, new_price
 
 
-def auction_login():
-    options = webdriver.ChromeOptions()  # 크롬 옵션 객체 생성
-    options.add_argument('headless')  # headless 모드 설정
-
-    driver = webdriver.Chrome('chromedriver', options=options)
-    driver.implicitly_wait(5)
-
-    driver.get(url='https://lostark.game.onstove.com/Market')
-    driver.find_element_by_name('user_id').send_keys("oodeng98@gmail.com")
-    driver.find_element_by_name('user_pwd').send_keys("lostarkengrave24")
-    driver.find_element_by_xpath('//*[@id="idLogin"]/div[3]/button').click()
-
-    s = requests.Session()
-    headers = {
-        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36',
-    }
-    s.headers.update(headers)
-
-    for cookie in driver.get_cookies():
-        s.cookies.set(cookie['name'], cookie['value'])
-    return s
+def login():
+    session = Session()
+    request = Request(
+        method='POST',
+        url='https://member.onstove.com/auth/singin',
+        headers={
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36',
+        },
+        data={
+            "user_id": "oodeng98@gmail.com",
+            "user_pwd": "lostarkengrave24",
+            "forever": "false",
+            "redirect_url": "https://lostark.game.onstove.com/Auction",
+            "inflow_path": "LOST_ARK",
+            "game_no": "45"
+        }
+    )
+    login_response = session.send(request.prepare())
+    print(login_response.text)
+    temp = QUERY
+    response = search_key(temp)
+    with open('test.html', 'w', encoding='utf-8') as f:
+        f.write(response)
+    return response.text
 
 
 if __name__ == "__main__":
@@ -412,7 +415,8 @@ if __name__ == "__main__":
     # qual1, qual2, qual3, a2, a3, a4, a5, a6, a7, a8, a9, a10 = receive_input_data(engrave_dic)
     # find_min_set(*auction_search(engrave_dic, qual1, qual2, qual3, a2, a3, a4, a5, a6, a7, a8), a9, find_price(a8, a10))
     # auction_search(engrave_dic, 0, 0, 0, "치명", "신속", "치명", "치명", "치명", "치명", {"원한": 15, "슈퍼 차지": 15, "바리케이드": 15, "결투의 대가": 15, "고독한 기사": 15})
-    auction_login()
+    login()
+
 
 # 33각인을 먼저 검색한 다음 없으면 그 다음 검색들도 안해줘도 되는데?
 # 로스트아크 전투정보실에서 가져와야되나?
