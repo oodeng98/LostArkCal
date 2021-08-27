@@ -252,40 +252,42 @@ def find_min_set(necklace, earring1, earring2, ring1, ring2, target, ab_stone, b
     print(total)
 
 
-def auction_set(qual, neck1, neck2, ear1, ear2, rin1, rin2, q):
-    condition = QUERY
-    condition["request[firstCategory]"] = "200000"
-    condition["request[secondCategory]"] = "200010"  # 200010, 200020, 200030, 목걸이, 귀걸이, 반지
-    condition["request[itemTier]"] = "3"  # 아이템 티어
-    condition["request[itemGrade]"] = "5"  # 아이템 등급 유물로
-    condition["request[gradeQuality]"] = str(qual)  # 아이템 등급, 10으로 나눠지지 않아도 무관함
+def auction_set():
+    options = webdriver.ChromeOptions()
+    # options.add_argument('headless')
 
-    # 전투 특성 설정
-    battle_dict = {"치명": "15", "특화": "16", "신속": "18"}
+    driver = webdriver.Chrome('chromedriver', options=options)
+    driver.get(url='https://lostark.game.onstove.com/Auction')
+    driver.implicitly_wait(1)
 
-    # 목걸이용 전투 특성 설정
-    if q[0] == 11:
-        # 특성 설정
-        condition["request[etcOptionList][0][firstOption]"] = "2"
-        condition["request[etcOptionList][0][secondOption]"] = battle_dict[neck1]
-        condition["request[etcOptionList][1][firstOption]"] = "2"
-        condition["request[etcOptionList][1][secondOption]"] = battle_dict[neck2]
-    elif q[0] == 12:
-        # 특성 설정
-        if q[1] == 1:
-            condition["request[etcOptionList][0][firstOption]"] = "2"
-            condition["request[etcOptionList][0][secondOption]"] = battle_dict[ear1]
-        else:
-            condition["request[etcOptionList][0][firstOption]"] = "2"
-            condition["request[etcOptionList][0][secondOption]"] = battle_dict[ear2]
-    else:
-        if q[1] == 1:
-            condition["request[etcOptionList][0][firstOption]"] = "2"
-            condition["request[etcOptionList][0][secondOption]"] = battle_dict[rin1]
-        else:
-            condition["request[etcOptionList][0][firstOption]"] = "2"
-            condition["request[etcOptionList][0][secondOption]"] = battle_dict[rin2]
-    return condition
+    driver.find_element_by_name('user_id').send_keys("oodeng98@gmail.com")
+    driver.find_element_by_name('user_pwd').send_keys("lostarkengrave24\n")
+
+    try:
+        element = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#lostark-wrapper > div > main > div > div.deal > div.deal-contents > form > fieldset > div > div.bt > button.button.button--deal-detail')))
+    finally:
+        driver.find_element_by_css_selector('#selItemTier > div.lui-select__title').click()
+        driver.find_element_by_css_selector('#selItemTier > div.lui-select__option > label:nth-child(4)').click()
+        driver.find_element_by_css_selector('#selItemGrade > div.lui-select__title').click()
+        driver.find_element_by_css_selector('#selItemGrade > div.lui-select__option > label:nth-child(7)').click()
+        driver.find_element_by_css_selector(
+            '#lostark-wrapper > div > main > div > div.deal > div.deal-contents > form > fieldset > div > div.bt > button.button.button--deal-detail').click()
+    return driver
+
+
+def common_set(driver, q):
+    try:
+        element = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#selCategoryDetail > div.lui-select__title')))
+    finally:
+        driver.find_element_by_css_selector('#selCategoryDetail > div.lui-select__title').click()
+        driver.find_element_by_css_selector(
+            f'#selCategoryDetail > div.lui-select__option > label:nth-child({q[0]})').click()
+        driver.find_element_by_css_selector('#selEtc_0 > div.lui-select__title').click()
+        driver.find_element_by_css_selector('#selEtc_0 > div.lui-select__option > label:nth-child(2)').click()
+        driver.find_element_by_css_selector('#selEtc_2 > div.lui-select__title').click()
+        driver.find_element_by_css_selector('#selEtc_2 > div.lui-select__option > label:nth-child(3)').click()
+        driver.find_element_by_css_selector('#selEtc_3 > div.lui-select__title').click()
+        driver.find_element_by_css_selector('#selEtc_3 > div.lui-select__option > label:nth-child(3)').click()
 
 
 def remove_comma(ret):
@@ -294,9 +296,11 @@ def remove_comma(ret):
 
 def auction_search(engrave_dict, neck_qual, earring_qual, ring_qual, neck1, neck2, ear1, ear2, rin1, rin2, target):
     # 카테고리 설정
-    session = login()
+    driver = auction_set()
+    deal_option = {"치명": 2, "특화": 3, "신속": 5}
     data = []
     for q in [(11, 1), (12, 1), (12, 2), (13, 1), (13, 2)]:
+        common_set(driver, q)
         temp_list = []
         if q == (12, 2):
             if ear1 == ear2:
@@ -307,7 +311,21 @@ def auction_search(engrave_dict, neck_qual, earring_qual, ring_qual, neck1, neck
                 data.append(data[-1])
                 continue
         if q[0] == 11:
-            qual = neck_qual
+            driver.find_element_by_css_selector(
+                '#modal-deal-option > div > div > div.lui-modal__content > div:nth-child(2) > table > tbody > '
+                'tr:nth-child(4) > td:nth-child(4) > div > div.lui-select__title').click()
+            driver.find_element_by_css_selector(
+                f'#modal-deal-option > div > div > div.lui-modal__content > div:nth-child(2) > table > tbody > '
+                f'tr:nth-child(4) > td:nth-child(4) > div > div.lui-select__option > label:nth-child('
+                f'{neck_qual})').click()
+            driver.find_element_by_css_selector('#selEtc_1 > div.lui-select__title').click()
+            driver.find_element_by_css_selector('#selEtc_1 > div.lui-select__option > label:nth-child(2)').click()
+            driver.find_element_by_css_selector('#selEtcSub_0 > div.lui-select__title').click()
+            driver.find_element_by_css_selector(
+                f'#selEtcSub_0 > div.lui-select__option > label:nth-child({deal_option[neck1]})')
+            driver.find_element_by_css_selector('#selEtcSub_1 > div.lui-select__title').click()
+            driver.find_element_by_css_selector(
+                f'#selEtcSub_1 > div.lui-select__option > label:nth-child({deal_option[neck2]})')
         elif q[0] == 12:
             qual = earring_qual
         else:
@@ -414,8 +432,7 @@ if __name__ == "__main__":
                    '황제의 칙령': 201, '황후의 은총': 200}
     # qual1, qual2, qual3, a2, a3, a4, a5, a6, a7, a8, a9, a10 = receive_input_data(engrave_dic)
     # find_min_set(*auction_search(engrave_dic, qual1, qual2, qual3, a2, a3, a4, a5, a6, a7, a8), a9, find_price(a8, a10))
-    # auction_search(engrave_dic, 0, 0, 0, "치명", "신속", "치명", "치명", "치명", "치명", {"원한": 15, "슈퍼 차지": 15, "바리케이드": 15, "결투의 대가": 15, "고독한 기사": 15})
-    login()
+    auction_search(engrave_dic, 0, 0, 0, "치명", "신속", "치명", "치명", "치명", "치명", {"원한": 15, "슈퍼 차지": 15, "바리케이드": 15, "결투의 대가": 15, "고독한 기사": 15})
 
 
 # 33각인을 먼저 검색한 다음 없으면 그 다음 검색들도 안해줘도 되는데?
